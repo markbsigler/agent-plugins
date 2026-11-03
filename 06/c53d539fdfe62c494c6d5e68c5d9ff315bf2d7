@@ -1,0 +1,94 @@
+aha-feature/README.md
+  s_446f9b3d4bdfe9::t_7aa8e676728fc6 54
+  s_446f9b3d4bdfe9::t_97b4b889c3fae1 1-53
+codebase-diagrams/skills/codebase-diagrams/scripts/render_diagrams.py
+  s_446f9b3d4bdfe9::t_a8a87b9577e36b 1-150
+README.md
+  s_446f9b3d4bdfe9::t_3be89e56c0c957 38-45,83-85
+aha-feature/CHANGELOG.md
+  s_446f9b3d4bdfe9::t_0bbf87a917a3fb 1-11
+aha-feature/LICENSE
+  s_446f9b3d4bdfe9::t_32a8c0dba3ae75 1-21
+aha-feature/mcp.json
+  s_446f9b3d4bdfe9::t_1a52bf02cc5461 1-9
+aha-feature/plugin.json
+  s_446f9b3d4bdfe9::t_ab1039087c82ef 1-14
+aha-feature/skills/aha-feature/SKILL.md
+  s_446f9b3d4bdfe9::t_f863793936084a 1-174
+aha-feature/skills/aha-feature/assets/feature-bundle-template.md
+  s_446f9b3d4bdfe9::t_db3759bb36836c 1-158
+aha-feature/skills/aha-feature/evals/train_queries.json
+  s_446f9b3d4bdfe9::t_beb115317dd551 1-15
+aha-feature/skills/aha-feature/evals/validation_queries.json
+  s_446f9b3d4bdfe9::t_e2fbfcecd77af1 1-9
+aha-feature/skills/aha-feature/references/aha-editor-html.md
+  s_446f9b3d4bdfe9::t_bfcc9c5209697b 1-96
+aha-feature/skills/aha-feature/references/aha-mcp-playbook.md
+  s_446f9b3d4bdfe9::t_f1ddb5802f5686 1-145
+aha-feature/skills/aha-feature/references/ears-and-traceability.md
+  s_446f9b3d4bdfe9::t_d779559800ece8 1-151
+aha-feature/skills/aha-feature/references/feature-anatomy.md
+  s_446f9b3d4bdfe9::t_4f3ab60c540e4e 1-157
+aha-feature/skills/aha-feature/references/interview-guide.md
+  s_446f9b3d4bdfe9::t_b0f66bd5d24b91 1-147
+aha-feature/skills/aha-feature/references/quality-gates.md
+  s_446f9b3d4bdfe9::t_3ae8e2f905111a 1-134
+aha-feature/skills/aha-feature/references/sdd-export.md
+  s_446f9b3d4bdfe9::t_f8b50e89aa30e0 1-91
+aha-feature/skills/aha-feature/references/writing-policy.md
+  s_446f9b3d4bdfe9::t_c80b8f5c80f5c4 1-72
+aha-feature/skills/aha-feature/scripts/aha_feature.py
+  s_446f9b3d4bdfe9::t_296a5980b0834a 1-2814
+aha-feature/skills/aha-feature/scripts/aha_html.py
+  s_446f9b3d4bdfe9::t_7d883ad33fda22 1-1109
+codebase-diagrams/CHANGELOG.md
+  s_446f9b3d4bdfe9::t_50273d6463cfb3 1-11
+codebase-diagrams/LICENSE
+  s_446f9b3d4bdfe9::t_bbe61654a37435 1-21
+codebase-diagrams/README.md
+  s_446f9b3d4bdfe9::t_af43a0e80e0f4b 1-41
+codebase-diagrams/plugin.json
+  s_446f9b3d4bdfe9::t_76c69a3a22c4d2 1-14
+codebase-diagrams/skills/codebase-diagrams/SKILL.md
+  s_446f9b3d4bdfe9::t_f6a31d10fe4f2a 1-97
+codebase-diagrams/skills/codebase-diagrams/assets/diagrams-readme-template.md
+  s_446f9b3d4bdfe9::t_1510037f04ba92 1-35
+codebase-diagrams/skills/codebase-diagrams/assets/example_core_architecture.mmd
+  s_446f9b3d4bdfe9::t_e9f0a9c0a12de4 1-52
+codebase-diagrams/skills/codebase-diagrams/evals/train_queries.json
+  s_446f9b3d4bdfe9::t_9acef509ef2a8f 1-14
+codebase-diagrams/skills/codebase-diagrams/evals/validation_queries.json
+  s_446f9b3d4bdfe9::t_14673458fe6b64 1-10
+codebase-diagrams/skills/codebase-diagrams/references/color-themes.md
+  s_446f9b3d4bdfe9::t_372feab08aa910 1-122
+codebase-diagrams/skills/codebase-diagrams/references/diagram-catalog.md
+  s_446f9b3d4bdfe9::t_e2c1bb3a8aa9bb 1-227
+codebase-diagrams/skills/codebase-diagrams/references/mermaid-standards.md
+  s_446f9b3d4bdfe9::t_16d11cb195bb7c 1-111
+pyproject.toml
+  s_446f9b3d4bdfe9::t_1018c1d2aa244a 66-71,79-81
+tests/conftest.py
+  s_446f9b3d4bdfe9::t_de472e08f1ce72 11,15-20
+tests/test_aha_feature.py
+  s_446f9b3d4bdfe9::t_6bc687814a4515 1-1517
+tests/test_aha_html.py
+  s_446f9b3d4bdfe9::t_8975a8c4b76fcd 1-495
+tests/test_render_diagrams.py
+  s_446f9b3d4bdfe9::t_5c8e352e18f5ab 1-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06c53d539fdfe62c494c6d5e68c5d9ff315bf2d7",
+  "prompts": {},
+  "sessions": {
+    "s_446f9b3d4bdfe9": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "47b05882-7fd1-4773-a315-4d4f1c641c01",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
