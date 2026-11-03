@@ -1,0 +1,29 @@
+.github/plugin/marketplace.json
+  s_446f9b3d4bdfe9::t_a54872a2de17f3 1-24
+CHANGELOG.md
+  s_446f9b3d4bdfe9::t_e4e2d3262a7cd8 11-12
+README.md
+  s_446f9b3d4bdfe9::t_f4203592893da1 106-120
+aha-feature/README.md
+  s_446f9b3d4bdfe9::t_4a1086fee69925 44-52
+codebase-diagrams/README.md
+  s_446f9b3d4bdfe9::t_35444324508955 26-34
+tests/test_marketplace.py
+  s_446f9b3d4bdfe9::t_1f219cec3ef087 1-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "086d5f0f46a7283ac3e16f6f0a708a6a1a0fa8b5",
+  "prompts": {},
+  "sessions": {
+    "s_446f9b3d4bdfe9": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "47b05882-7fd1-4773-a315-4d4f1c641c01",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
