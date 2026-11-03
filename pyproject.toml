@@ -63,6 +63,12 @@ ignore = [
 # runtime imports of Path/pytest read better than TYPE_CHECKING blocks.
 "tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
 "*/servers/*/tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
+# Migrated verbatim from markbsigler/skills: large single-file CLIs whose behavior is
+# documented in SKILL.md and the module docstring, with long usage/help and message
+# strings. Public-docstring, line-length and typing-only-import rules are relaxed here
+# rather than churning ~3,000 lines of tested code; new code should still comply.
+"aha-feature/skills/aha-feature/scripts/*.py" = ["D101", "D102", "D103", "E501", "TC003"]
+"tests/test_aha_feature.py" = ["E501"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -70,8 +76,9 @@ convention = "google"
 [tool.ty.environment]
 python-version = "3.12"
 # `scripts/` is not a package; tests add it to sys.path at runtime, and
-# pytest adds `tests/` via `pythonpath`. Tell ty about both.
-extra-paths = ["scripts", "tests"]
+# pytest adds `tests/` via `pythonpath`; conftest.py adds the aha-feature scripts.
+# Tell ty about all three.
+extra-paths = ["scripts", "tests", "aha-feature/skills/aha-feature/scripts"]
 
 [tool.ty.src]
 # PEP 723 single-file scripts (skills/*/scripts/, servers/) declare their own

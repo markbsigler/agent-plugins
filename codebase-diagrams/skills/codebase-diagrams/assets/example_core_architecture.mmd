@@ -1,0 +1,52 @@
+%% Example: core architecture for a small web service. Copy the structure, not the content.
+%% Every node and edge in a real diagram must come from the codebase being documented.
+%%{ init: { 'theme': 'base', 'themeVariables': { 'fontSize': '13px' } } }%%
+flowchart TD
+    classDef mainApp fill:#FF6B6B,stroke:#C0392B,color:#fff,stroke-width:2px
+    classDef foundation fill:#4ECDC4,stroke:#1ABC9C,color:#333,stroke-width:2px
+    classDef uiComp fill:#96CEB4,stroke:#27AE60,color:#333,stroke-width:2px
+    classDef bizLogic fill:#F7DC6F,stroke:#F39C12,color:#333,stroke-width:2px
+    classDef dataStore fill:#45B7D1,stroke:#2980B9,color:#fff,stroke-width:2px
+    classDef external fill:#BB8FCE,stroke:#8E44AD,color:#fff,stroke-width:2px
+    classDef config fill:#E8E8E8,stroke:#7F8C8D,color:#333,stroke-width:1px
+
+    subgraph clients ["<b>Clients</b>"]
+        WEB["<b>Web app</b><br/><i>src/web/</i>"]
+        CLI["<b>CLI</b><br/><i>src/cli/</i>"]
+    end
+
+    subgraph api_layer ["<b>API</b>"]
+        ROUTER["<b>Router</b><br/><i>src/api/router.ts</i>"]
+        AUTH["<b>Auth middleware</b><br/><i>src/api/auth.ts</i>"]
+    end
+
+    subgraph domain ["<b>Domain</b>"]
+        ORDERS["<b>Order service</b><br/><i>src/domain/orders.ts</i>"]
+        BILLING["<b>Billing service</b><br/><i>src/domain/billing.ts</i>"]
+    end
+
+    subgraph persistence ["<b>Persistence</b>"]
+        DB[("<b>PostgreSQL</b><br/><i>via src/db/</i>")]
+        CACHE[("<b>Redis cache</b>")]
+    end
+
+    PAYMENTS["<b>Payment provider</b><br/><i>external API</i>"]
+    ENV["<b>Config</b><br/><i>.env, config/</i>"]
+
+    WEB ==> ROUTER
+    CLI ==> ROUTER
+    ROUTER --> AUTH
+    ROUTER ==> ORDERS
+    ORDERS --> BILLING
+    ORDERS ==> DB
+    ORDERS -.-> CACHE
+    BILLING ==> PAYMENTS
+    ROUTER -.-> ENV
+    DB -.-> ENV
+
+    class WEB,CLI uiComp
+    class ROUTER,AUTH mainApp
+    class ORDERS,BILLING bizLogic
+    class DB,CACHE dataStore
+    class PAYMENTS external
+    class ENV config

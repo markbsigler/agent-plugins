@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aha-feature",
+  "version": "1.0.0",
+  "description": "Elicit, elaborate, and verify Aha! features as spec-driven records through the Aha! MCP server, with EARS requirements and on-demand Spec Kit, OpenSpec, or Kiro export.",
+  "author": {
+    "name": "Mark B. Sigler",
+    "url": "https://github.com/markbsigler"
+  },
+  "homepage": "https://github.com/markbsigler/agent-plugins/tree/main/aha-feature",
+  "repository": "https://github.com/markbsigler/agent-plugins",
+  "license": "MIT",
+  "keywords": ["aha", "product-management", "requirements", "ears", "spec-driven-development", "mcp"]
+}

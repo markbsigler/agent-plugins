@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codebase-diagrams",
+  "version": "1.0.0",
+  "description": "Map a codebase's architecture as validated Mermaid diagrams (system overview, layers, dependencies, data flow, build pipelines) and render them to PNG.",
+  "author": {
+    "name": "Mark B. Sigler",
+    "url": "https://github.com/markbsigler"
+  },
+  "homepage": "https://github.com/markbsigler/agent-plugins/tree/main/codebase-diagrams",
+  "repository": "https://github.com/markbsigler/agent-plugins",
+  "license": "MIT",
+  "keywords": ["mermaid", "diagrams", "architecture", "documentation", "codebase"]
+}

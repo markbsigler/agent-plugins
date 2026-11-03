@@ -35,6 +35,14 @@ connected to.
 > Never hand-build a plugin. Copy the pattern with `just new-plugin <name>` — see
 > [Creating a plugin](#creating-a-plugin).
 
+## Plugins
+
+| Plugin | Contents | MCP |
+| --- | --- | --- |
+| [`aha-feature`](./aha-feature) | Skill that elicits, elaborates, and verifies Aha! features, epics, and requirements as spec-driven records | Aha! (remote, OAuth) — set your subdomain in [`mcp.json`](./aha-feature/mcp.json) |
+| [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders color-coded Mermaid architecture diagrams | none |
+| [`example-plugin`](./example-plugin) | Reference pattern for new plugins | FastMCP example server |
+
 ## Features
 
 - **One reference pattern** — [`example-plugin/`](./example-plugin) demonstrates every
@@ -71,6 +79,9 @@ agent-plugins/
 │           ├── Dockerfile
 │           ├── src/example_server/
 │           └── tests/
+│
+├── aha-feature/                 # skill + Aha! MCP config
+├── codebase-diagrams/           # skill + render_diagrams.py
 │
 ├── schemas/1.0.0/               # vendored canonical Agent Plugins JSON Schemas
 ├── scripts/                     # new_plugin.py / new_server.py scaffolding

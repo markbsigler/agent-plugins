@@ -8,10 +8,16 @@ therefore requires no test edits.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
-from discovery import discover_plugins, discover_servers, discover_skills
+from discovery import REPO_ROOT, discover_plugins, discover_servers, discover_skills
+
+# The aha-feature scripts import each other as top-level modules, as they do when run directly.
+_AHA_FEATURE_SCRIPTS = REPO_ROOT / "aha-feature" / "skills" / "aha-feature" / "scripts"
+if str(_AHA_FEATURE_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_AHA_FEATURE_SCRIPTS))
 
 
 def _ids(paths: list[Path]) -> list[str]:

@@ -1,0 +1,10 @@
+[
+  {"query": "update the diagrams in docs/diagrams, we split the billing module into two services last sprint", "should_trigger": true},
+  {"query": "create a layered architecture view of this app", "should_trigger": true},
+  {"query": "render all the .mmd files in docs/diagrams to png", "should_trigger": true},
+  {"query": "give me a high level picture of what this monorepo contains before my review tomorrow", "should_trigger": true},
+  {"query": "design a new microservice architecture for a ride sharing app from scratch", "should_trigger": false},
+  {"query": "create an org chart for my team in a slide deck", "should_trigger": false},
+  {"query": "set up GitHub Actions to build and deploy this project", "should_trigger": false},
+  {"query": "why is my docker build failing on the npm install step", "should_trigger": false}
+]

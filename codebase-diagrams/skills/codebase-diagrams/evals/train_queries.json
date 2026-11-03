@@ -1,0 +1,14 @@
+[
+  {"query": "I just joined this team and the repo is a maze. can you make me some diagrams of how it all fits together?", "should_trigger": true},
+  {"query": "generate architecture diagrams for this project and put them in docs/diagrams", "should_trigger": true},
+  {"query": "map out the dependencies between the modules in src/ so i can see what breaks if i change the auth package", "should_trigger": true},
+  {"query": "document the architecture of this codebase visually, mermaid is fine", "should_trigger": true},
+  {"query": "i need a data flow diagram for our ingestion service, it's in ~/Code/ingest, reads from kafka and writes to postgres + s3", "should_trigger": true},
+  {"query": "can u draw the build and deploy pipeline for this repo", "should_trigger": true},
+  {"query": "write a flowchart of our customer onboarding process, no code involved", "should_trigger": false},
+  {"query": "explain what the processOrder function does", "should_trigger": false},
+  {"query": "draw an ER diagram from this SQL schema file", "should_trigger": false},
+  {"query": "fix the syntax error in this mermaid gantt chart", "should_trigger": false},
+  {"query": "make a UML class diagram for the User class", "should_trigger": false},
+  {"query": "summarize this repo's README and list its dependencies from package.json", "should_trigger": false}
+]

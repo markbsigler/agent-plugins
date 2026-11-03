@@ -1,0 +1,15 @@
+[
+  {"query": "write a spec for APP-142, it's the one about bulk CSV export", "should_trigger": true},
+  {"query": "can you turn this idea into proper requirements in Aha? we want customers to be able to schedule reports", "should_trigger": true},
+  {"query": "draft an Aha feature for SSO login using Okta", "should_trigger": true},
+  {"query": "review APP-88 and tell me if the acceptance criteria are good enough to hand to engineering", "should_trigger": true},
+  {"query": "lint the feature I just drafted against the ready gate", "should_trigger": true},
+  {"query": "my PM left a one-line epic in Aha (PLAT-E-31). help me flesh it out", "should_trigger": true},
+  {"query": "elaborate the requirements for the notifications feature and ask me whatever you need", "should_trigger": true},
+  {"query": "align APP-201 with its sibling features so the terminology matches", "should_trigger": true},
+  {"query": "create a Jira ticket for the login bug", "should_trigger": false},
+  {"query": "write a product requirements document for a new mobile app in Google Docs", "should_trigger": false},
+  {"query": "show me my Aha ideas portal votes from last month", "should_trigger": false},
+  {"query": "generate an Aha roadmap report of releases by quarter", "should_trigger": false},
+  {"query": "implement the CSV export function in src/export.py", "should_trigger": false}
+]

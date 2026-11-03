@@ -1,0 +1,9 @@
+[
+  {"query": "export APP-142 as a Spec Kit spec into the repo at ~/Code/billing", "should_trigger": true},
+  {"query": "approve the spec for APP-77 and make sure nobody changed it afterward", "should_trigger": true},
+  {"query": "rewrite the requirements on this aha feature using EARS", "should_trigger": true},
+  {"query": "Aha epic needs success metrics and edge cases added, pls fix", "should_trigger": true},
+  {"query": "explain what EARS syntax is", "should_trigger": false},
+  {"query": "add a comment to APP-142 saying the release slipped", "should_trigger": false},
+  {"query": "write a GitHub issue with acceptance criteria for the dark mode toggle", "should_trigger": false}
+]
