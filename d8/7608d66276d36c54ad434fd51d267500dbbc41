@@ -1,0 +1,37 @@
+CHANGELOG.md
+  s_446f9b3d4bdfe9::t_1f9cd1209ce5a8 1-28
+.editorconfig
+  s_446f9b3d4bdfe9::t_758bd4c407eab1 1-25
+.pre-commit-config.yaml
+  s_446f9b3d4bdfe9::t_c9d401a0755928 62
+aha-feature/skills/aha-feature/scripts/aha_feature.py
+  s_446f9b3d4bdfe9::t_03402624034b70 626,630,632-633,963-965,1267-1272,1274-1275,2165-2169,2687-2690
+aha-feature/skills/aha-feature/scripts/aha_html.py
+  s_446f9b3d4bdfe9::t_72067e0feca59d 251
+justfile
+  s_446f9b3d4bdfe9::t_a9f16cd87e176c 73,75,77,79
+pyproject.toml
+  s_446f9b3d4bdfe9::t_a8c7edfd6f1466 5,54-69,72-79,87-89,149-150,152-154,159
+scripts/toolchain.py
+  s_446f9b3d4bdfe9::t_bb4c0dbaffc355 173-177
+tests/test_aha_feature.py
+  s_446f9b3d4bdfe9::t_94e7e44ed753d6 346-348,350,514-517,948,1050-1051
+tests/test_render_diagrams.py
+  s_446f9b3d4bdfe9::t_a30229137cb9ba 5,86-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d87608d66276d36c54ad434fd51d267500dbbc41",
+  "prompts": {},
+  "sessions": {
+    "s_446f9b3d4bdfe9": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "47b05882-7fd1-4773-a315-4d4f1c641c01",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
