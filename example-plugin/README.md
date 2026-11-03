@@ -7,6 +7,8 @@ conventions live in [`README.md`](../README.md) and [`AGENTS.md`](../AGENTS.md).
 ```text
 example-plugin/
 ├── plugin.json                       # required portable manifest
+├── LICENSE                           # travels with the plugin when it is copied out
+├── CHANGELOG.md                      # tracks `version` in plugin.json
 ├── mcp.json                          # streamable-http URL of the deployed server
 ├── skills/
 │   ├── example-skill/                # stdlib-only PEP 723 script

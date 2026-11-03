@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security issues privately via
-[GitHub's private vulnerability reporting](https://github.com/markbsigler/plugins/security/advisories/new)
+[GitHub's private vulnerability reporting](https://github.com/markbsigler/agent-plugins/security/advisories/new)
 rather than opening a public issue.
 
 Include the affected plugin or script, what an attacker could achieve, and

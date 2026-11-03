@@ -1,5 +1,5 @@
 [project]
-name = "plugins-repo-dev"
+name = "agent-plugins-dev"
 version = "0.1.0"
 description = "Development tooling for the Agent Plugins collection in this repository. Not published or shipped with any plugin."
 requires-python = ">=3.11"

@@ -57,7 +57,7 @@ connected to.
 ## Layout
 
 ```text
-plugins/
+agent-plugins/
 ├── example-plugin/              # ← the example and pattern for new plugins
 │   ├── plugin.json              #   required portable manifest
 │   ├── mcp.json                 #   streamable-http server URLs
@@ -88,8 +88,8 @@ like a package. Each plugin directory in this repo *is* the distributable unit: 
 to wherever your client discovers plugins.
 
 ```bash
-git clone https://github.com/markbsigler/plugins.git
-cp -r plugins/example-plugin /path/to/your/client/plugins/
+git clone https://github.com/markbsigler/agent-plugins.git
+cp -r agent-plugins/example-plugin /path/to/your/client/plugins/
 ```
 
 The client reads three things and ignores everything else:
@@ -138,7 +138,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 Then, on any platform:
 
 ```bash
-git clone https://github.com/markbsigler/plugins.git && cd plugins
+git clone https://github.com/markbsigler/agent-plugins.git && cd agent-plugins
 uv tool install rust-just     # installs `just` from PyPI (all platforms)
 just install                  # installs remaining tools + syncs the workspace
 just check                    # lint + format + types + spelling + tests + security

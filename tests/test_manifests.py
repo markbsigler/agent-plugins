@@ -211,3 +211,62 @@ def test_mcp_headers_contain_no_obvious_secrets(plugin_dir: Path) -> None:
                 f"{name}: header {header!r} looks like a credential; "
                 "authentication is client-managed in Agent Plugins v1"
             )
+
+
+def test_mcp_stdio_command_is_a_single_token_without_placeholders(plugin_dir: Path) -> None:
+    """Spec §7.2.1: `command` is one executable token and is never expanded."""
+    mcp_path = plugin_dir / "mcp.json"
+    if not mcp_path.exists():
+        pytest.skip("plugin declares no MCP servers")
+
+    for name, server in load_json(mcp_path)["mcpServers"].items():
+        if server["type"] != "stdio":
+            continue
+        command = server["command"]
+        assert not any(ch.isspace() for ch in command), (
+            f"{name}: command {command!r} must be a single token; put arguments in `args`"
+        )
+        assert "${" not in command, f"{name}: command {command!r} is never placeholder-expanded"
+
+
+def test_mcp_stdio_env_avoids_reserved_names_and_secrets(plugin_dir: Path) -> None:
+    """Spec §9.2: clients own PLUGIN_ROOT/PLUGIN_DATA; `env` is visible package data."""
+    mcp_path = plugin_dir / "mcp.json"
+    if not mcp_path.exists():
+        pytest.skip("plugin declares no MCP servers")
+
+    suspicious = ("key", "token", "secret", "password", "credential")
+    for name, server in load_json(mcp_path)["mcpServers"].items():
+        for variable, value in server.get("env", {}).items():
+            assert variable.upper() not in {"PLUGIN_ROOT", "PLUGIN_DATA"}, (
+                f"{name}: env must not set the client-managed variable {variable!r}"
+            )
+            if any(word in variable.lower() for word in suspicious):
+                assert "${PLUGIN_" in value or not value, (
+                    f"{name}: env {variable!r} looks like a credential; never embed secrets"
+                )
+
+
+def test_mcp_headers_are_unique_case_insensitively(plugin_dir: Path) -> None:
+    """Spec §7.2.1: the same header under different casing makes the entry invalid."""
+    mcp_path = plugin_dir / "mcp.json"
+    if not mcp_path.exists():
+        pytest.skip("plugin declares no MCP servers")
+
+    for name, server in load_json(mcp_path)["mcpServers"].items():
+        names = [header.lower() for header in server.get("headers", {})]
+        assert len(names) == len(set(names)), f"{name}: duplicate header names: {names}"
+
+
+def test_plugin_contains_no_symlink_escaping_the_plugin_root(plugin_dir: Path) -> None:
+    """Spec §4.1: every package path must resolve within the plugin root."""
+    root = plugin_dir.resolve()
+    skip = {".venv", "node_modules", ".git", "__pycache__"}
+    escaping = [
+        str(path.relative_to(plugin_dir))
+        for path in plugin_dir.rglob("*")
+        if path.is_symlink()
+        and not skip.intersection(path.relative_to(plugin_dir).parts)
+        and not path.resolve().is_relative_to(root)
+    ]
+    assert not escaping, f"{plugin_dir.name}: symlinks resolve outside the plugin root: {escaping}"
