@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import stat
 import subprocess
 import sys
@@ -82,6 +83,8 @@ class Env:
         self, *args: str, extra_env: dict[str, str] | None = None
     ) -> subprocess.CompletedProcess[str]:
         env = {"PATH": str(self.bin), "STUB_LOG": str(self.log)}
+        # Forward coverage's subprocess hooks; PATH is isolated but coverage must still start.
+        env.update({k: v for k, v in os.environ.items() if k.startswith(("COVERAGE", "COV_CORE"))})
         env.update(extra_env or {})
         return subprocess.run(  # noqa: S603
             [sys.executable, str(SCRIPT), *args],

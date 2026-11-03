@@ -59,7 +59,7 @@ repos:
 
       - id: pytest-fast
         name: pytest (fast tests only)
-        entry: uv run pytest -m "not slow"
+        entry: uv run pytest -m "not slow" --cov --cov-report=term-missing:skip-covered
         language: system
         types: [python]
         pass_filenames: false

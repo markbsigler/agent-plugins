@@ -70,13 +70,13 @@ typecheck:
 spell:
     uv run typos
 
-# Run the full test suite (repo-level + every server's tests).
+# Run the full test suite with the branch-coverage gate (80%, see pyproject.toml).
 test:
-    uv run pytest
+    uv run pytest --cov
 
-# Run only the fast tests (skip subprocess/network round trips).
+# Run only the fast tests (skip subprocess/network round trips) with the coverage gate.
 test-fast:
-    uv run pytest -m "not slow"
+    uv run pytest -m "not slow" --cov
 
 # Run tests with a coverage report; see cov_annotate/ for line-by-line detail.
 coverage:

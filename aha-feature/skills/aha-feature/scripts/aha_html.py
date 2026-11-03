@@ -248,8 +248,7 @@ def header_key(cells: Sequence[str]) -> tuple[str, ...]:
 def split_table_row(line: str) -> list[str]:
     """Split a Markdown table row into cells, keeping escaped pipes and code spans."""
     text = line.strip()
-    if text.startswith("|"):
-        text = text[1:]
+    text = text.removeprefix("|")
     if text.endswith("|") and not text.endswith("\\|"):
         text = text[:-1]
     cells: list[str] = []

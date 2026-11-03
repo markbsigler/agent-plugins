@@ -2,7 +2,7 @@
 name = "agent-plugins-dev"
 version = "0.1.0"
 description = "Development tooling for the Agent Plugins collection in this repository. Not published or shipped with any plugin."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 # This repo is a uv workspace: each MCP server under `*/servers/*` is its own
 # package with its own dependencies, resolved together into one root uv.lock
@@ -51,11 +51,32 @@ select = [
   "TC",    # type-checking imports
   "ISC",   # implicit str concat
   "RUF",   # ruff-specific (includes RUF100 unused-noqa)
+  "A",     # shadowed builtins
+  "BLE",   # blind except
+  "DTZ",   # naive datetimes
+  "ERA",   # commented-out code
+  "FA",    # __future__ annotations
+  "FLY",   # f-string join
+  "FURB",  # refurb
+  "G",     # logging format
+  "LOG",   # logging misuse
+  "PERF",  # performance anti-patterns
+  "PGH",   # pygrep hooks
+  "PL",    # pylint
+  "T10",   # debugger calls
+  "T20",   # print
+  "TID",   # tidy imports
+  "TRY",   # exception handling
 ]
 ignore = [
-  "D203", # conflicts with D211 (no blank line before class docstring)
-  "D213", # conflicts with D212 (multi-line summary on first line)
-  "D107", # __init__ docstring; the class docstring covers it
+  "D203",    # conflicts with D211 (no blank line before class docstring)
+  "D213",    # conflicts with D212 (multi-line summary on first line)
+  "D107",    # __init__ docstring; the class docstring covers it
+  "TRY003",  # long messages in exceptions are fine here
+  "PLR2004", # magic values: HTTP statuses and small limits read better inline
+  "PLR0911", # complexity thresholds are advisory; the CLIs are tested to 98%
+  "PLR0912",
+  "PLR0915",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -63,6 +84,9 @@ ignore = [
 # runtime imports of Path/pytest read better than TYPE_CHECKING blocks.
 "tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
 "*/servers/*/tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
+# Skill scripts and repo tooling are command-line programs: printing is their output.
+"**/skills/*/scripts/*.py" = ["T201"]
+"scripts/*.py" = ["T201"]
 # Migrated verbatim from markbsigler/skills: large single-file CLIs whose behavior is
 # documented in SKILL.md and the module docstring, with long usage/help and message
 # strings. Public-docstring, line-length and typing-only-import rules are relaxed here
@@ -122,11 +146,17 @@ markers = [
 source = [
   "scripts",
   "example-plugin/servers/example-server/src",
+  "aha-feature/skills/aha-feature/scripts",
+  "codebase-diagrams/skills/codebase-diagrams/scripts",
 ]
+branch = true
+# Measure scripts that tests run as subprocesses (render_diagrams.py).
+patch = ["subprocess"]
 relative_files = true
 
 [tool.coverage.report]
 show_missing = true
+fail_under = 80
 exclude_lines = [
   "pragma: no cover",
   "^\\s*if __name__ == .__main__.:",

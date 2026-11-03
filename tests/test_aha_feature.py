@@ -343,9 +343,11 @@ def test_structure_rules(old: str, new: str, gate: str, rule: str, severity: str
 
 
 def test_structure_rules_for_empty_and_long_fields() -> None:
-    empty = variant(FEATURE.split("# Field: Description\n")[1].split("# Field: Summary")[0], "\n")
+    empty = variant(
+        FEATURE.split("# Field: Description\n")[1].split("# Field: Summary", maxsplit=1)[0], "\n"
+    )
     assert rules(empty)["STR001"] == "error"
-    no_requirements = FEATURE.split("# Requirement:")[0]
+    no_requirements = FEATURE.split("# Requirement:", maxsplit=1)[0]
     assert rules(no_requirements)["STR007"] == "error"
     long_summary = variant(
         "Release notes are assembled", "Long " * 300 + "Release notes are assembled"
@@ -509,8 +511,10 @@ def test_criteria_and_use_case_rules(old: str, new: str, rule: str, severity: st
 
 
 def test_criteria_and_use_cases_without_ids() -> None:
-    criteria = FEATURE.split("# Field: Acceptance Criteria\n\n")[1].split("\n# Field:")[0]
-    cases = FEATURE.split("# Field: Use Case(s)\n\n")[1].split("\n# Field:")[0]
+    criteria = FEATURE.split("# Field: Acceptance Criteria\n\n")[1].split("\n# Field:", maxsplit=1)[
+        0
+    ]
+    cases = FEATURE.split("# Field: Use Case(s)\n\n")[1].split("\n# Field:", maxsplit=1)[0]
     text = variant(criteria, "Given a draft, when approved, then published.\n")
     text = variant(cases, "Drafting and routing.\n", text)
 
@@ -941,7 +945,7 @@ def test_speckit_export(tmp_path: Path) -> None:
 
 
 def test_speckit_export_without_use_cases_or_done(tmp_path: Path) -> None:
-    cases = FEATURE.split("# Field: Use Case(s)\n\n")[1].split("\n# Field:")[0]
+    cases = FEATURE.split("# Field: Use Case(s)\n\n")[1].split("\n# Field:", maxsplit=1)[0]
     text = variant(cases, "\n")
     text = variant("### Definition of Done", "### Exit", text)
     text = variant("- **FR-1 (P0):**", "- **NFR-9 (P0):**", text)
@@ -1043,7 +1047,8 @@ def test_kiro_export(tmp_path: Path) -> None:
 
 def test_kiro_export_handles_sparse_requirements(tmp_path: Path) -> None:
     text = (
-        FEATURE.split("# Requirement: APP-12-2")[0] + "# Requirement: new Extra\n\nNo statements.\n"
+        FEATURE.split("# Requirement: APP-12-2", maxsplit=1)[0]
+        + "# Requirement: new Extra\n\nNo statements.\n"
     )
     text = variant("**NFR-1 (P1):**", "**NFR-1:**", text)
     text = variant("**As a** release manager", "**As an** operator", text)

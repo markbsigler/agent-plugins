@@ -170,9 +170,11 @@ def discover_server_packages() -> list[tuple[str, str]]:
         src = pyproject.parent / "src"
         if not src.is_dir():
             continue
-        for candidate in sorted(src.iterdir()):
-            if candidate.is_dir() and (candidate / "__init__.py").is_file():
-                servers.append((pyproject.parent.name, candidate.name))
+        servers.extend(
+            (pyproject.parent.name, candidate.name)
+            for candidate in sorted(src.iterdir())
+            if candidate.is_dir() and (candidate / "__init__.py").is_file()
+        )
     return sorted(servers)
 
 

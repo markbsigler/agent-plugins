@@ -623,13 +623,14 @@ def normalize_markdown(text: str) -> str:
         if SPACER_LINE_RE.match(line):
             lines.append("")
             continue
+        out = line
         if stripped.startswith("|"):
             cells = aha_html.split_table_row(stripped)
             if aha_html.TABLE_SEPARATOR_RE.match(stripped):
-                line = "|" + "|".join(["---"] * len(cells)) + "|"
+                out = "|" + "|".join(["---"] * len(cells)) + "|"
             else:
-                line = "| " + " | ".join(cells) + " |"
-        lines.append(line.rstrip())
+                out = "| " + " | ".join(cells) + " |"
+        lines.append(out.rstrip())
     return "\n".join(merge_continuation_rows(lines)).strip()
 
 
@@ -959,7 +960,9 @@ def parse_requirement(section: Section) -> RequirementInfo:
             info.has_covers = True
             cited = covers.group("covers")
             info.covers_uc |= expand_ids(cited, "UC")
-            info.covers_all = info.covers_all or bool(re.search(r"\ball use cases\b", cited, re.I))
+            info.covers_all = info.covers_all or bool(
+                re.search(r"\ball use cases\b", cited, re.IGNORECASE)
+            )
             info.covers_fr |= {f"FR-{n}" for n in expand_ids(cited, "FR")}
             info.covers_fr |= {f"NFR-{n}" for n in expand_ids(cited, "NFR")}
             info.prd = info.prd or bool(re.search(r"\bPRD\b", cited))
@@ -1261,14 +1264,15 @@ def ears_problems(text: str, exempt: frozenset[str] = frozenset()) -> list[tuple
         problems.append(("EARS006", "warning", "put the WHILE clause before the WHEN clause."))
     if where is not None and where > 0 and plain[:where].strip():
         problems.append(("EARS006", "warning", "put the WHERE clause first."))
-    for term in sorted({match.group(0).lower() for match in VAGUE_RE.finditer(plain)} - exempt):
-        problems.append(
-            (
-                "EARS008",
-                "warning",
-                f"'{term}' is vague; use a number, a list, or an observable result.",
-            )
+    vague_terms = sorted({match.group(0).lower() for match in VAGUE_RE.finditer(plain)} - exempt)
+    problems.extend(
+        (
+            "EARS008",
+            "warning",
+            f"'{term}' is vague; use a number, a list, or an observable result.",
         )
+        for term in vague_terms
+    )
     return problems
 
 
@@ -2158,11 +2162,11 @@ def _traceability(source: ExportSource) -> list[str]:
         record = f"{section.ref} {section.title}" if section.ref else section.title
         cases = "all" if requirement.covers_all else _ids("UC", sorted(requirement.covers_uc))
         criteria = _ids("AC", sorted(requirement.verified_ac))
-        for statement in requirement.statements:
-            lines.append(
-                f"| {statement.sid} | {statement.priority or ''} | {_table_cell(record)} "
-                f"| {cases} | {criteria} |"
-            )
+        lines.extend(
+            f"| {statement.sid} | {statement.priority or ''} | {_table_cell(record)} "
+            f"| {cases} | {criteria} |"
+            for statement in requirement.statements
+        )
     lines.append("")
     return lines
 
@@ -2680,7 +2684,10 @@ def command_export(args: argparse.Namespace) -> int:
     profile = args.profile or bundle.meta.get("profile") or "agent"
     spec = analyze(bundle, profile)
     source = ExportSource(
-        spec, fingerprint(bundle), args.date or dt.date.today().isoformat(), args.slug
+        spec,
+        fingerprint(bundle),
+        args.date or dt.datetime.now().astimezone().date().isoformat(),
+        args.slug,
     )
     warnings: list[str] = []
     if args.format == "speckit":
