@@ -41,6 +41,15 @@ browser. There is no API key to configure, and none belongs in this plugin — t
 specification forbids credentials in `mcp.json`. An Aha! account administrator must enable
 AI functionality and MCP access for your account.
 
+## Install
+
+Add the marketplace, then install just this plugin:
+
+```text
+/plugin marketplace add markbsigler/agent-plugins
+/plugin install aha-feature@agent-plugins
+```
+
 ## Requirements
 
 - An Agent Plugins client that supports skills and `streamable-http` MCP servers.

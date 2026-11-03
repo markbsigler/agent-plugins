@@ -1,0 +1,24 @@
+{
+  "name": "agent-plugins",
+  "metadata": {
+    "description": "Agent Plugins by Mark B. Sigler: portable Agent Skills and MCP configuration.",
+    "version": "1.0.0"
+  },
+  "owner": {
+    "name": "Mark B. Sigler"
+  },
+  "plugins": [
+    {
+      "name": "aha-feature",
+      "description": "Elicit, elaborate, and verify Aha! features as spec-driven records through the Aha! MCP server, with EARS requirements and on-demand Spec Kit, OpenSpec, or Kiro export.",
+      "version": "1.0.0",
+      "source": "./aha-feature"
+    },
+    {
+      "name": "codebase-diagrams",
+      "description": "Map a codebase's architecture as validated Mermaid diagrams (system overview, layers, dependencies, data flow, build pipelines) and render them to PNG.",
+      "version": "1.0.0",
+      "source": "./codebase-diagrams"
+    }
+  ]
+}

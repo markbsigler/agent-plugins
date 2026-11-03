@@ -23,6 +23,15 @@ Analyzes a codebase proportionally to its size, drafts only what it verified, va
 each Mermaid diagram, and renders PNG files. See
 [`skills/codebase-diagrams/SKILL.md`](skills/codebase-diagrams/SKILL.md).
 
+## Install
+
+Add the marketplace, then install just this plugin:
+
+```text
+/plugin marketplace add markbsigler/agent-plugins
+/plugin install codebase-diagrams@agent-plugins
+```
+
 ## Requirements
 
 - Python 3.11+ for the render script, run with `uv run --script` or `python3`.

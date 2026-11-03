@@ -103,6 +103,21 @@ git clone https://github.com/markbsigler/agent-plugins.git
 cp -r agent-plugins/example-plugin /path/to/your/client/plugins/
 ```
 
+### Install one plugin from the marketplace
+
+This repo is also a plugin marketplace ([`.github/plugin/marketplace.json`](./.github/plugin/marketplace.json)),
+so a client can add it once and install any single plugin from it:
+
+```text
+/plugin marketplace add markbsigler/agent-plugins
+/plugin install aha-feature@agent-plugins
+```
+
+In VS Code, add `markbsigler/agent-plugins` under **Customizations → Browse → Configure
+Marketplaces**, then pick the plugin. Copilot CLI uses `copilot plugin marketplace add` and
+`copilot plugin install`. Update the marketplace entry's `version` when you bump a plugin's
+`plugin.json`; the tests enforce that they match.
+
 The client reads three things and ignores everything else:
 
 | Path | What the client does with it |

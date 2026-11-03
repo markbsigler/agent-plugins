@@ -8,6 +8,8 @@ All notable changes to the repository tooling are documented here. The format fo
 
 ### Added
 
+- Plugin marketplace catalog at `.github/plugin/marketplace.json`, so a single plugin can be
+  installed from the repo, with tests that keep it in sync with each `plugin.json`.
 - `aha-feature` and `codebase-diagrams` plugins, migrated from
   [markbsigler/skills](https://github.com/markbsigler/skills).
 - Branch coverage with an 80% gate, covering `scripts/`, the example server, and the
