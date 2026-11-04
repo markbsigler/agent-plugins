@@ -210,7 +210,7 @@ Keep PRs focused on one plugin or one concern. In the description, say what the 
 and, if it uses an MCP server, where that server is hosted.
 
 - [ ] `just check` passes
-- [ ] The new-plugin checklist in [`AGENTS.md` §4](./AGENTS.md#4-checklist-for-a-new-plugin)
+- [ ] The new-plugin checklist in [`AGENTS.md` §7](./AGENTS.md#7-checklist-for-a-new-plugin)
       is satisfied
 - [ ] No `TODO` or template placeholders left in manifests
 - [ ] The marketplace entry and `CHANGELOG.md` match any version bump
