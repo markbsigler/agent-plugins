@@ -9,7 +9,7 @@ MCP servers are built with [FastMCP](https://gofastmcp.com/) and deployed as
 containers over Streamable HTTP.
 
 Read this file before adding or modifying a plugin. For the contributor
-walkthrough, see [`README.md`](./README.md).
+walkthrough, see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ### Canonical sources
 
@@ -35,7 +35,7 @@ https://gofastmcp.com/ — its API changed meaningfully in 3.x.
 - [`example-plugin/`](./example-plugin) is the canonical example. **Never hand-build a
   new plugin** — run `just new-plugin <name>`, which copies it and rewrites
   every identifier.
-- Repo-level tooling — `README.md`, `AGENTS.md`, `pyproject.toml`, `justfile`,
+- Repo-level tooling — `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `pyproject.toml`, `justfile`,
   `.gitattributes`, `.pre-commit-config.yaml`, `schemas/`, `scripts/`,
   `tests/` — is not plugin content. Never place it inside a plugin, and never
   make plugin behavior depend on it.

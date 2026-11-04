@@ -19,6 +19,8 @@ All notable changes to the repository tooling are documented here. The format fo
 
 ### Changed
 
+- Streamlined `README.md` to an overview, plugin list, and install steps; moved the plugin
+  walkthrough, toolchain, and server-deployment guidance into `CONTRIBUTING.md`.
 - Renamed the repository from `plugins` to `agent-plugins`.
 - Broadened the ruff rule set (builtins, logging, pylint, refurb, perflint, tryceratops,
   and more) and raised the dev tooling Python floor to 3.12.

@@ -2,7 +2,7 @@
 
 The reference [Agent Plugin](https://agent-plugins.org/) for this repository —
 copy it with `just new-plugin <name>` to start anything new. Repo-wide
-conventions live in [`README.md`](../README.md) and [`AGENTS.md`](../AGENTS.md).
+conventions live in [`CONTRIBUTING.md`](../CONTRIBUTING.md) and [`AGENTS.md`](../AGENTS.md).
 
 ```text
 example-plugin/
@@ -78,7 +78,7 @@ Set the allowlists to your public hostname when deploying behind a proxy.
 ## Using this as a template
 
 Prefer `just new-plugin <name>`, which does all the renaming for you. See
-[Creating a plugin](../README.md#creating-a-plugin) for the full walkthrough.
+[Creating a plugin](../CONTRIBUTING.md#creating-a-plugin) for the full walkthrough.
 
 ## Canonical references
 
