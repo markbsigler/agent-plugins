@@ -16,6 +16,7 @@ authoritative where it and the schema disagree.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -270,3 +271,24 @@ def test_plugin_contains_no_symlink_escaping_the_plugin_root(plugin_dir: Path) -
         and not path.resolve().is_relative_to(root)
     ]
     assert not escaping, f"{plugin_dir.name}: symlinks resolve outside the plugin root: {escaping}"
+
+
+# Spec §4.2/§6.1 define `plugin.json`, `skills/`, and `mcp.json`; LICENSE, CHANGELOG, and
+# README are the conventional package docs. §8.2 allows reverse-domain extension directories.
+SPEC_TOP_LEVEL = {"plugin.json", "skills", "mcp.json", "README.md", "CHANGELOG.md", "LICENSE"}
+EXTENSION_NAMESPACE = re.compile(r"^[a-z0-9]+(\.[a-z0-9-]+)+$")
+IGNORED_TOP_LEVEL = {".DS_Store", "__pycache__"}
+
+
+def test_plugin_top_level_contains_only_spec_defined_entries(plugin_dir: Path) -> None:
+    """Agent Plugins 1.0.0 defines no other component locations (e.g. no `servers/`)."""
+    unexpected = sorted(
+        entry.name
+        for entry in plugin_dir.iterdir()
+        if entry.name not in SPEC_TOP_LEVEL | IGNORED_TOP_LEVEL
+        and not (entry.is_dir() and EXTENSION_NAMESPACE.match(entry.name))
+    )
+    assert not unexpected, (
+        f"{plugin_dir.name}: top-level entries outside the Agent Plugins spec: {unexpected}. "
+        "Keep server source and other non-package files outside the plugin directory."
+    )

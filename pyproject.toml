@@ -4,12 +4,6 @@ version = "0.1.0"
 description = "Development tooling for the Agent Plugins collection in this repository. Not published or shipped with any plugin."
 requires-python = ">=3.12"
 
-# This repo is a uv workspace: each MCP server under `*/servers/*` is its own
-# package with its own dependencies, resolved together into one root uv.lock
-# so container builds are reproducible. See AGENTS.md.
-[tool.uv.workspace]
-members = ["*/servers/*"]
-
 [dependency-groups]
 dev = [
   "ruff>=0.8",
@@ -17,12 +11,10 @@ dev = [
   "taplo>=0.9",
   "typos>=1.30",
   "pytest>=8.3",
-  "pytest-asyncio>=0.24",
   "pytest-cov>=6.0",
   "inline-snapshot>=0.20",
   "jsonschema>=4.23",
   "pyyaml>=6.0",
-  "fastmcp>=3.4",
 ]
 
 [tool.ruff]
@@ -83,7 +75,6 @@ ignore = [
 # Tests: asserts are the point, docstrings on every test add noise, and
 # runtime imports of Path/pytest read better than TYPE_CHECKING blocks.
 "tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
-"*/servers/*/tests/**" = ["S101", "D100", "D102", "D103", "TC001", "TC002", "TC003"]
 # Skill scripts and repo tooling are command-line programs: printing is their output.
 "**/skills/*/scripts/*.py" = ["T201"]
 "scripts/*.py" = ["T201"]
@@ -105,47 +96,36 @@ python-version = "3.12"
 extra-paths = ["scripts", "tests", "aha-feature/skills/aha-feature/scripts"]
 
 [tool.ty.src]
-# PEP 723 single-file scripts (skills/*/scripts/, servers/) declare their own
+# PEP 723 single-file scripts (skills/*/scripts/) declare their own
 # dependencies inline and are type-checked via `uv run --script` (see
 # AGENTS.md), not this repo-wide environment, so they are excluded here to
 # avoid false import errors.
-exclude = ["**/skills/*/scripts/", "**/servers/"]
+exclude = ["**/skills/*/scripts/"]
 
 [tool.inline-snapshot]
 format-command = "ruff format --stdin-filename {filename} -"
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "*/servers/*/tests"]
-# `auto` means async test functions need no per-test decorator, so server
-# tests stay boilerplate-free.
-asyncio_mode = "auto"
+testpaths = ["tests"]
 addopts = [
   "-ra",
   "--strict-markers",
   "--strict-config",
-  # importlib import mode lets every server use the same tests/test_server.py
-  # basename without module-name collisions, and needs no __init__.py files.
   "--import-mode=importlib",
 ]
 # Makes tests/discovery.py importable regardless of import mode.
 pythonpath = ["tests"]
 xfail_strict = true
-filterwarnings = [
-  "error",
-  # FastMCP/uvicorn emit deprecation chatter from transitive deps we don't control.
-  "default::DeprecationWarning",
-]
+filterwarnings = ["error"]
 markers = [
   "slow: exercises a real subprocess or network round trip (deselect with -m 'not slow')",
 ]
 
 [tool.coverage.run]
-# `scripts/*.py` are added to sys.path at runtime (not an installed package),
-# and `example_server` is a uv workspace member installed editable into the
-# same venv -- both are measurable in-process by path.
+# `scripts/*.py` are added to sys.path at runtime (not an installed package), so
+# they are measured by path.
 source = [
   "scripts",
-  "example-plugin/servers/example-server/src",
   "aha-feature/skills/aha-feature/scripts",
   "codebase-diagrams/skills/codebase-diagrams/scripts",
 ]

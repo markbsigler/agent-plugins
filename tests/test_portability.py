@@ -8,7 +8,6 @@ platforms in ways that are confusing to diagnose.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from discovery import REPO_ROOT
 
@@ -93,26 +92,4 @@ def test_gitattributes_normalizes_line_endings() -> None:
     content = gitattributes.read_text(encoding="utf-8")
     assert "*.py     text eol=lf" in content or "*.py text eol=lf" in content, (
         ".gitattributes must force LF for Python scripts"
-    )
-
-
-def test_dockerfiles_use_posix_paths(server_dir: Path) -> None:
-    """Backslash paths would break builds on non-Windows engines."""
-    dockerfile = server_dir / "Dockerfile"
-    bad = [
-        line
-        for line in dockerfile.read_text(encoding="utf-8").splitlines()
-        if line.startswith(("COPY ", "ADD ")) and "\\" in line.rstrip("\\")
-    ]
-    assert not bad, f"{server_dir.name}: Dockerfile COPY/ADD must use forward slashes: {bad}"
-
-
-def test_server_entrypoint_is_platform_neutral(server_dir: Path) -> None:
-    """`python -m <pkg>` works everywhere; a bare script path may not."""
-    dockerfile = server_dir / "Dockerfile"
-    content = dockerfile.read_text(encoding="utf-8")
-    cmd_lines = [line for line in content.splitlines() if line.startswith("CMD ")]
-    assert cmd_lines, f"{server_dir.name}: Dockerfile needs a CMD"
-    assert any("-m" in line for line in cmd_lines), (
-        f'{server_dir.name}: prefer `CMD ["python", "-m", "<pkg>"]` over a script path'
     )

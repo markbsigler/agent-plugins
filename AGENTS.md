@@ -3,10 +3,8 @@
 Instructions for coding agents (and humans) working in this repository.
 
 This repo is a collection of **Agent Plugins**: portable packages of Agent
-Skills and MCP servers built to the
+Skills and MCP server configuration built to the
 [Agent Plugins Specification v1.0.0](https://agent-plugins.org/specification).
-MCP servers are built with [FastMCP](https://gofastmcp.com/) and deployed as
-containers over Streamable HTTP.
 
 Read this file before adding or modifying a plugin. For the contributor
 walkthrough, see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
@@ -21,11 +19,9 @@ secondary summaries — all are current and authoritative:
 | Plugin package format | https://agent-plugins.org/specification |
 | Skill format | https://agentskills.io/specification |
 | **MCP protocol** | **https://modelcontextprotocol.io/specification/** |
-| **FastMCP framework** | **https://gofastmcp.com/** |
 
 Where the Agent Plugins specification and this document conflict, the
-specification wins. Where FastMCP usage is unclear, check
-https://gofastmcp.com/ — its API changed meaningfully in 3.x.
+specification wins.
 
 ## 1. Repository layout
 
@@ -40,41 +36,32 @@ https://gofastmcp.com/ — its API changed meaningfully in 3.x.
   `tests/` — is not plugin content. Never place it inside a plugin, and never
   make plugin behavior depend on it.
 - `scripts/` holds the cross-platform Python helpers that back the `justfile`
-  (`toolchain.py`, `new_plugin.py`, `new_server.py`, `image_smoke.py`,
-  `run_server.py`, `security_scan.py`, `update_schemas.py`). Add logic here
+  (`toolchain.py`, `new_plugin.py`, `security_scan.py`, `update_schemas.py`). Add logic here
   rather than in a recipe — see §1.3.
 - [`schemas/1.0.0/`](./schemas/1.0.0) vendors the canonical Agent Plugins JSON
   Schemas used by the tests. Refresh with `just update-schemas`.
 
-### 1.1 The repo is a `uv` workspace
+### 1.1 One `uv` environment
 
-Each MCP server under `*/servers/*` is its own Python package and a workspace
-member (`[tool.uv.workspace] members = ["*/servers/*"]`). One root `uv.lock`
-pins every server together, so container builds are reproducible and match
-local development.
-
-Always sync with **`just sync`** (`uv sync --all-packages`), which installs
-every workspace member. A plain `uv sync` will not install newly added
-servers, and their tests will fail to import.
+One root `uv.lock` pins the dev tooling. Sync with **`just sync`** (`uv sync`).
+Skill scripts are PEP 723 files and do not belong to this environment.
 
 ### 1.2 Environment setup
 
 **`uv` is the single hard prerequisite.** Everything else bootstraps from it:
 `just` installs from PyPI (`uv tool install rust-just`, which has wheels for
-macOS, Linux, and Windows), and the Python tools come from the workspace.
+macOS, Linux, and Windows), and the Python tools come from the project environment.
 
 Run **`just install`** on a new machine: it detects the platform's package
 manager (Homebrew, apt, dnf, pacman, zypper, winget, scoop, Chocolatey),
-installs what's missing, and syncs the workspace. It is idempotent.
+installs what's missing, and syncs the environment. It is idempotent.
 
-**`just doctor`** reports the status of every tool and the container engine
-without changing anything — run it first when something behaves unexpectedly.
+**`just doctor`** reports the status of every tool without changing anything — run it first when something behaves unexpectedly.
 
-`podman` and `trivy` are **optional**: development, testing, and linting work
-without them. `just security` skips cleanly when `trivy` is absent.
+`trivy` is **optional**: development, testing, and linting work without it. `just security` skips cleanly when `trivy` is absent.
 
 Python tools (`ruff`, `ty`, `taplo`, `typos`, `pytest`) come from the uv
-workspace, not a package manager. Never install them separately.
+environment, not a package manager. Never install them separately.
 
 ### 1.3 Portability rules
 
@@ -108,7 +95,6 @@ Also:
   filesystem, so the check is meaningful on Windows. Set it with
   `git update-index --chmod=+x <path>` if `chmod` isn't available.
 - Use `pathlib`, never string path concatenation or hardcoded `/`.
-- Container `CMD` uses `python -m <package>`, never a platform-specific path.
 
 ## 2. The Agent Plugins package format (summary)
 
@@ -146,16 +132,16 @@ from fixed locations. `plugin.json` never contains inline component config.
 
 A missing `skills/` or `mcp.json` is fine — just an absent component type.
 
-**`servers/` is not a portable component.** It holds build-time source for the
-containers you deploy. Conformant clients read only `plugin.json`, `skills/`,
-and `mcp.json`, so they ignore it. This is intentional: consolidating server
-source with the plugin that declares it is worth carrying build material in
-the package. Do not "fix" this by moving servers out.
+**Nothing else belongs in a plugin.** `servers/` and similar build material are
+not portable components: clients ignore them, and they would ship inside every
+installed copy. Host server source in its own repository. The only other
+allowed top-level directories are reverse-domain client extensions (§2.6).
+`tests/test_manifests.py` enforces this.
 
 ### 2.4 Transports and placeholders
 
-- This repo deploys **`streamable-http`** servers. `stdio` entries are
-  supported by the spec but are not the pattern here.
+- Plugins here reference **`streamable-http`** servers hosted elsewhere. `stdio`
+  entries are supported by the spec but are not the pattern here.
 - Remote entries require `type` and `url`; `url` must be absolute HTTP(S),
   with no userinfo or fragment, and non-loopback endpoints must use HTTPS.
 - `${PLUGIN_ROOT}` / `${PLUGIN_DATA}` expand **only** in a stdio entry's
@@ -185,100 +171,19 @@ hooks/agents/commands at the portable top level.
   equivalent for each (`uv run`, `uv sync`, `uv add`, `uv run --script`,
   `uv python install`). Ask before adding any other packaging tool.
 - Never commit `requirements.txt`. Dependencies belong in a PEP 723 inline
-  block (skills) or a package `pyproject.toml` managed by `uv` (servers),
-  with the root `uv.lock` committed.
-- `.python-version` pins the interpreter; keep it aligned with the
-  `Dockerfile` base image.
+  block (skills); the repo's dev tooling lives in the root `pyproject.toml`
+  with `uv.lock` committed.
+- `.python-version` pins the interpreter for the dev environment.
 
-### 3.2 Two packaging patterns — pick the right one
+### 3.2 Skill scripts are PEP 723 single files
 
-This distinction matters; applying the wrong one causes real problems.
-
-**Skill scripts → PEP 723 single files.** Inline `# /// script` metadata,
-`#!/usr/bin/env -S uv run --script` shebang, `chmod +x`. Dependencies resolve
-on first run, so the skill directory stays self-contained and copyable.
-
-**MCP servers → full packages.** `pyproject.toml`, `src/` layout, workspace
-member, locked via root `uv.lock`. PEP 723 is *wrong* here: containers need
-pinned, reproducible resolution and a lockfile.
+Inline `# /// script` metadata, `#!/usr/bin/env -S uv run --script` shebang,
+`chmod +x`. Dependencies resolve on first run, so the skill directory stays
+self-contained and copyable.
 
 Never make one plugin import code from another.
 
-### 3.3 FastMCP servers
-
-Use [FastMCP](https://gofastmcp.com/) — not the lower-level `mcp` SDK — for
-every MCP server. FastMCP's documentation at **https://gofastmcp.com/** is the
-canonical reference for the framework; the **MCP specification** at
-**https://modelcontextprotocol.io/specification/** is canonical for the
-protocol (transports, lifecycle, wire format). Check them rather than guessing:
-FastMCP's API changed meaningfully in 3.x.
-
-**Structure matters.** Keep `server.py` free of transport concerns:
-
-```python
-# src/<pkg>/server.py  — tools only
-from fastmcp import FastMCP
-
-mcp = FastMCP(name="my-server", instructions="...")
-
-
-@mcp.tool
-def do_thing(arg: str) -> dict[str, str]:
-    """This docstring becomes the tool description shown to models."""
-```
-
-```python
-# src/<pkg>/__main__.py  — hosting only
-mcp.run(transport="http", host=..., port=...)
-```
-
-That split is what makes in-memory testing (§3.6) possible. Also:
-
-- `@mcp.tool` takes no parentheses in FastMCP 3.x.
-- **Write real docstrings on every tool** — they become the model-facing
-  description. A tool without one is nearly unusable; tests enforce this.
-- Type-hint tool signatures; FastMCP derives the JSON schema from them.
-- Read host/port/allowlists from the environment so one image runs anywhere.
-- Set `allowed_hosts`/`allowed_origins` in production (DNS-rebinding
-  protection).
-- Never log to stdout in a stdio server; for HTTP servers prefer `logging`.
-- Each server carries a `fastmcp.json` (canonical FastMCP config) and a
-  multi-stage, non-root `Dockerfile`. `just inspect-server` dumps the tool
-  surface.
-
-### 3.4 Containers: podman first
-
-**`podman` is this repo's container engine** (rootless and daemonless). Use the
-`just` recipes rather than invoking the engine directly:
-
-```bash
-just image-build example-plugin example-server   # build
-just image-run example-server                    # run on :8000/mcp
-just image-smoke example-plugin example-server   # build, run, verify over HTTP
-```
-
-The `Dockerfile` is OCI-standard, so Docker works identically — pass
-`just container=docker <recipe>` if you prefer it. Keep it that way: do not
-introduce podman-only or docker-only build syntax.
-
-Dockerfile requirements (enforced by `tests/test_servers.py`):
-
-- Multi-stage, so the runtime image excludes build tooling.
-- A `USER` instruction — never run as root. Use a plain (non-`--system`)
-  account: system UIDs must be below `SYS_UID_MAX` (999), so `--system` with
-  a UID like 1001 warns during build.
-- Build from the **repo root** so the workspace `uv.lock` is in context.
-
-**Podman gotcha:** `HEALTHCHECK` is a Docker-format instruction. Podman
-defaults to the OCI image format, which has no equivalent and *silently
-drops it* with only a warning. The `image-build` recipe therefore passes
-`--format docker`. If you build by hand, do the same or your healthcheck
-will not exist.
-
-If a container command fails, run `just doctor` first: the engine is commonly
-installed but not started (`podman machine start`).
-
-### 3.5 Data validation and processing
+### 3.3 Data validation and processing
 
 - **Pydantic v2** for structured input/output at boundaries — script stdout,
   tool returns, HTTP bodies. Use v2 APIs only (`model_dump()`,
@@ -286,26 +191,18 @@ installed but not started (`podman machine start`).
   `Field` constraints over hand-rolled validation.
 - **polars** for tabular work — not `pandas` without asking. Prefer the lazy
   API (`pl.scan_csv(...).collect()`) for anything that may not fit in memory.
-- Declare these per component (PEP 723 block or the server's `pyproject.toml`),
-  never in the repo root.
+- Declare these per skill script (PEP 723 block), never in the repo root.
 
-### 3.6 Testing
+### 3.4 Testing
 
 ```bash
 just test          # everything
 just test-fast     # skip subprocess/network round trips
 ```
 
-- **Server tests use FastMCP's in-memory transport**: `Client(mcp)` speaks the
-  full protocol with no network, subprocess, or ports. This is the default;
-  reach for a real HTTP round trip only when testing transport itself, and
-  mark it `@pytest.mark.slow`.
-- `asyncio_mode = "auto"` — async tests need no decorator.
-- **Repo-level tests auto-discover plugins.** Any test taking `plugin_dir`,
-  `skill_dir`, or `server_dir` is parametrized across everything found. Add
+- **Repo-level tests auto-discover plugins.** Any test taking `plugin_dir`
+  or `skill_dir` is parametrized across everything found. Add
   new *checks*, never new hardcoded plugin names.
-- Tests use `--import-mode=importlib`, so every server can reuse the
-  `tests/test_server.py` basename without collisions.
 - Use [`inline-snapshot`](https://15r10nk.github.io/inline-snapshot/) for
   verbose expected values: write `snapshot()`, run `just snapshot-fix`, then
   **read the diff**. A passing fix means code and test agree — not that the
@@ -320,11 +217,9 @@ just test-fast     # skip subprocess/network round trips
   other scenario through a direct `main()` call.
 - Run `just coverage` (`pytest --cov --cov-report=annotate:cov_annotate`)
   periodically. `[tool.coverage.run].source` in `pyproject.toml` scopes
-  measurement to `scripts/` and each server's `src/`, since those are the
-  only code importable in-process; PEP 723 skill scripts run only via `uv
-  run --script` subprocesses and are not measured this way.
+  measurement to `scripts/` and the skill scripts that tests import or run.
 
-### 3.7 Code quality
+### 3.5 Code quality
 
 - Type hints on all signatures; avoid bare `Any` when a concrete type exists.
 - `pathlib.Path` over string path manipulation (enforced by ruff `PTH`).
@@ -335,14 +230,14 @@ just test-fast     # skip subprocess/network round trips
 - Suppress a lint only with a **targeted, explained** `# noqa: RULE`. `RUF100`
   fails the build on stale suppressions.
 
-### 3.8 Tooling
+### 3.6 Tooling
 
 Everything runs through `just` — prefer recipes over retyping commands, and
 update the `justfile` (not just this doc) when a command changes.
 
 | Tool | Purpose |
 | --- | --- |
-| `uv` | Packaging, workspace, script running |
+| `uv` | Packaging, environment, script running |
 | `just` | Task runner (`just install`, `just doctor`, `just check`) |
 | `ruff` | Lint + format |
 | `ty` | Type check (**not** mypy/pyright) |
@@ -350,7 +245,6 @@ update the `justfile` (not just this doc) when a command changes.
 | `typos` | Spell check |
 | `pytest` | Tests |
 | `trivy` | Vulnerabilities, secrets, misconfig |
-| `podman` | Container build + run (**not** docker by default) |
 
 `ty` skips PEP 723 scripts (`[tool.ty.src].exclude`) because their deps live in
 `uv`'s per-script cache. Type-check one with
@@ -364,11 +258,11 @@ Pre-commit (`just install-hooks`) runs the same tools as `language: system`
 hooks calling this repo's toolchain, so hooks and `justfile` can't drift. If
 you add a repo-level tool, add **both** a recipe and a hook.
 
-### 3.9 Before committing
+### 3.7 Before committing
 
 Run **`just check`** (lint, format, types, spelling, tests, security). Then:
 
-1. Exercise any new/changed script or server directly.
+1. Exercise any new/changed script directly.
 2. Re-read `plugin.json` / `mcp.json` diffs against §2 — a schema violation is
    fatal for the whole plugin.
 3. If dependencies changed, commit the updated `uv.lock`.
@@ -382,10 +276,8 @@ Run **`just check`** (lint, format, types, spelling, tests, security). Then:
 - [ ] Each skill is `skills/<name>/SKILL.md` with frontmatter `name` matching
       its directory and a description saying *what* and *when*.
 - [ ] Skill scripts are PEP 723, executable, and have a shebang.
-- [ ] `mcp.json` uses `streamable-http` with a real HTTPS URL and no
-      credentials in headers.
-- [ ] Each server: `fastmcp.json`, `pyproject.toml`, non-root multi-stage
-      `Dockerfile`, `__main__.py`, and in-memory tests.
-- [ ] Every tool has a docstring.
-- [ ] `just sync` run so new workspace members are installed.
+- [ ] `mcp.json` (if present) uses `streamable-http` with a real HTTPS URL and
+      no credentials in headers; delete it otherwise.
+- [ ] Nothing at the plugin top level except `plugin.json`, `skills/`,
+      `mcp.json`, docs, and reverse-domain extension directories.
 - [ ] `just check` passes.

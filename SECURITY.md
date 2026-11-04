@@ -12,15 +12,14 @@ steps to reproduce.
 ## Scope
 
 This repository contains plugin *packages*: manifests, skill scripts, and MCP
-server source. Relevant concerns include:
+server configuration. Relevant concerns include:
 
-- A skill script or MCP server tool that executes untrusted input unsafely.
+- A skill script that executes untrusted input unsafely.
 - A `mcp.json` pointing at an endpoint the plugin author does not control.
 - Committed credentials (see below).
-- A container image that runs as root or ships unnecessary attack surface.
 
-Out of scope: vulnerabilities in `uv`, `just`, `podman`, `trivy`, FastMCP, or
-other upstream tools — report those to their maintainers.
+Out of scope: vulnerabilities in `uv`, `just`, `trivy`, or other upstream
+tools — report those to their maintainers.
 
 ## Credentials
 

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -41,10 +40,10 @@ class TestToolPackageFor:
 
     def test_uses_the_manager_specific_override(self) -> None:
         tool = toolchain.Tool(
-            name="podman", required=False, purpose="containers", package={"winget": "RedHat.Podman"}
+            name="trivy", required=False, purpose="scan", package={"winget": "AquaSecurity.Trivy"}
         )
-        assert tool.package_for("winget") == "RedHat.Podman"
-        assert tool.package_for("brew") == "podman"
+        assert tool.package_for("winget") == "AquaSecurity.Trivy"
+        assert tool.package_for("brew") == "trivy"
 
 
 class TestDetectPackageManager:
@@ -117,35 +116,6 @@ class TestToolVersion:
             assert toolchain.tool_version(tool) == "installed (version unknown)"
 
 
-class TestContainerEngineStatus:
-    """Test `container_engine_status` across install/running states."""
-
-    def test_reports_not_installed(self, monkeypatch) -> None:
-        monkeypatch.setattr(toolchain.shutil, "which", lambda _name: None)
-        assert toolchain.container_engine_status("podman") == (False, "not installed")
-
-    def test_reports_ready_when_info_succeeds(self, monkeypatch) -> None:
-        monkeypatch.setattr(toolchain.shutil, "which", lambda _name: "/usr/bin/podman")
-        with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=0)):
-            assert toolchain.container_engine_status("podman") == (True, "ready")
-
-    def test_reports_not_running_when_info_fails(self, monkeypatch) -> None:
-        monkeypatch.setattr(toolchain.shutil, "which", lambda _name: "/usr/bin/podman")
-        with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=1)):
-            assert toolchain.container_engine_status("podman") == (
-                False,
-                "installed but not running",
-            )
-
-    def test_reports_not_responding_on_a_launch_failure(self, monkeypatch) -> None:
-        monkeypatch.setattr(toolchain.shutil, "which", lambda _name: "/usr/bin/podman")
-        with patch.object(toolchain.subprocess, "run", side_effect=OSError("boom")):
-            assert toolchain.container_engine_status("podman") == (
-                False,
-                "installed but not responding",
-            )
-
-
 class TestWorkspaceToolOk:
     """Test `workspace_tool_ok`'s subprocess result handling."""
 
@@ -162,78 +132,24 @@ class TestWorkspaceToolOk:
             assert toolchain.workspace_tool_ok("ruff") is False
 
 
-@pytest.fixture
-def fake_repo(tmp_path: Path, monkeypatch) -> Path:
-    """Point `toolchain.REPO_ROOT` at a scratch directory for these tests."""
-    monkeypatch.setattr(toolchain, "REPO_ROOT", tmp_path)
-    return tmp_path
-
-
-class TestDiscoverServerPackages:
-    """Test the `*/servers/*/pyproject.toml` discovery glob."""
-
-    def test_finds_every_server_with_an_importable_src_package(self, fake_repo: Path) -> None:
-        server = fake_repo / "acme-tools" / "servers" / "acme-server"
-        pkg = server / "src" / "acme_server"
-        pkg.mkdir(parents=True)
-        (server / "pyproject.toml").write_text("[project]\nname='acme-server'\n")
-        (pkg / "__init__.py").write_text("")
-
-        assert toolchain.discover_server_packages() == [("acme-server", "acme_server")]
-
-    def test_skips_a_server_with_no_src_directory(self, fake_repo: Path) -> None:
-        server = fake_repo / "acme-tools" / "servers" / "acme-server"
-        server.mkdir(parents=True)
-        (server / "pyproject.toml").write_text("[project]\nname='acme-server'\n")
-
-        assert toolchain.discover_server_packages() == []
-
-    def test_skips_a_src_child_with_no_init_py(self, fake_repo: Path) -> None:
-        server = fake_repo / "acme-tools" / "servers" / "acme-server"
-        (server / "src" / "not_a_package").mkdir(parents=True)
-        (server / "pyproject.toml").write_text("[project]\nname='acme-server'\n")
-
-        assert toolchain.discover_server_packages() == []
-
-    def test_returns_nothing_when_no_servers_exist(self, fake_repo: Path) -> None:
-        del fake_repo  # only needed to point REPO_ROOT at an empty scratch dir
-        assert toolchain.discover_server_packages() == []
-
-
-class TestServerPackageImportable:
-    """Test `server_package_importable`'s subprocess handling."""
-
-    def test_true_when_the_import_succeeds(self) -> None:
-        with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=0)):
-            assert toolchain.server_package_importable("example_server") is True
-
-    def test_false_when_the_import_fails(self) -> None:
-        with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=1)):
-            assert toolchain.server_package_importable("example_server") is False
-
-    def test_false_when_the_process_cannot_be_launched(self) -> None:
-        with patch.object(toolchain.subprocess, "run", side_effect=OSError("boom")):
-            assert toolchain.server_package_importable("example_server") is False
-
-
-class TestSyncWorkspace:
-    """Test `sync_workspace`'s success/failure/exception paths."""
+class TestSyncEnvironment:
+    """Test `sync_environment`'s success/failure/exception paths."""
 
     def test_true_on_success(self, capsys: pytest.CaptureFixture[str]) -> None:
         with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=0)):
-            assert toolchain.sync_workspace() is True
-        assert "uv sync --all-packages" in capsys.readouterr().out
+            assert toolchain.sync_environment() is True
+        assert "uv sync" in capsys.readouterr().out
 
     def test_false_on_a_nonzero_exit(self) -> None:
         with patch.object(toolchain.subprocess, "run", return_value=_completed(returncode=1)):
-            assert toolchain.sync_workspace() is False
+            assert toolchain.sync_environment() is False
 
     def test_false_when_the_process_cannot_be_launched(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
         with patch.object(toolchain.subprocess, "run", side_effect=OSError("boom")):
-            assert toolchain.sync_workspace() is False
-        assert "workspace sync failed" in capsys.readouterr().out
+            assert toolchain.sync_environment() is False
+        assert "environment sync failed" in capsys.readouterr().out
 
 
 class TestInstallTool:
@@ -261,16 +177,16 @@ class TestInstallTool:
 
     def test_uses_the_package_manager_directly_with_no_uv_package(self, monkeypatch) -> None:
         monkeypatch.setattr(toolchain.shutil, "which", lambda _name: None)
-        tool = toolchain.Tool(name="podman", required=False, purpose="x")
+        tool = toolchain.Tool(name="trivy", required=False, purpose="x")
         with patch.object(
             toolchain.subprocess, "run", return_value=_completed(returncode=0)
         ) as run:
             assert toolchain.install_tool(tool, manager="brew") is True
-        assert run.call_args[0][0] == ["brew", "install", "podman"]
+        assert run.call_args[0][0] == ["brew", "install", "trivy"]
 
     def test_false_when_no_manager_is_available(self, monkeypatch) -> None:
         monkeypatch.setattr(toolchain.shutil, "which", lambda _name: None)
-        tool = toolchain.Tool(name="podman", required=False, purpose="x")
+        tool = toolchain.Tool(name="trivy", required=False, purpose="x")
         assert toolchain.install_tool(tool, manager=None) is False
 
 
@@ -290,7 +206,7 @@ class TestPrintManualInstructions:
 
 
 class TestDoInstall:
-    """Test `do_install`'s tool-installation and workspace-sync flow."""
+    """Test `do_install`'s tool-installation and environment-sync flow."""
 
     def test_fails_immediately_when_uv_is_missing(
         self, monkeypatch, capsys: pytest.CaptureFixture[str]
@@ -301,7 +217,7 @@ class TestDoInstall:
 
     def test_returns_zero_when_everything_is_already_installed(self, monkeypatch) -> None:
         monkeypatch.setattr(toolchain.shutil, "which", lambda _name: "/usr/bin/x")
-        with patch.object(toolchain, "sync_workspace", return_value=True):
+        with patch.object(toolchain, "sync_environment", return_value=True):
             assert toolchain.do_install() == 0
 
     def test_installs_a_missing_optional_tool_and_continues(self, monkeypatch) -> None:
@@ -311,7 +227,7 @@ class TestDoInstall:
         )
         with (
             patch.object(toolchain, "install_tool", return_value=True) as install,
-            patch.object(toolchain, "sync_workspace", return_value=True),
+            patch.object(toolchain, "sync_environment", return_value=True),
         ):
             assert toolchain.do_install() == 0
         assert install.called
@@ -329,17 +245,17 @@ class TestDoInstall:
         )
         with (
             patch.object(toolchain, "install_tool", return_value=False),
-            patch.object(toolchain, "sync_workspace", return_value=True),
+            patch.object(toolchain, "sync_environment", return_value=True),
         ):
             assert toolchain.do_install() == 0
 
-    def test_fails_when_the_workspace_sync_fails(
+    def test_fails_when_the_environment_sync_fails(
         self, monkeypatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         monkeypatch.setattr(toolchain.shutil, "which", lambda _name: "/usr/bin/x")
-        with patch.object(toolchain, "sync_workspace", return_value=False):
+        with patch.object(toolchain, "sync_environment", return_value=False):
             assert toolchain.do_install() == 1
-        assert "workspace is not usable" in capsys.readouterr().out
+        assert "dev environment is not usable" in capsys.readouterr().out
 
 
 class TestDoDoctor:
@@ -348,14 +264,12 @@ class TestDoDoctor:
     def _patch_all_ok(self, monkeypatch) -> None:
         monkeypatch.setattr(toolchain, "tool_version", lambda _tool: "1.0.0")
         monkeypatch.setattr(toolchain, "workspace_tool_ok", lambda _name: True)
-        monkeypatch.setattr(toolchain, "discover_server_packages", list)
-        monkeypatch.setattr(toolchain, "container_engine_status", lambda _engine: (True, "ready"))
 
     def test_reports_success_when_everything_is_fine(
         self, monkeypatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         self._patch_all_ok(monkeypatch)
-        assert toolchain.do_doctor("podman") == 0
+        assert toolchain.do_doctor() == 0
         assert "All required tooling present and ready." in capsys.readouterr().out
 
     def test_fails_when_a_required_tool_is_missing(self, monkeypatch) -> None:
@@ -365,7 +279,7 @@ class TestDoDoctor:
             "tool_version",
             lambda tool: "not installed" if tool.required else "1.0.0",
         )
-        assert toolchain.do_doctor("podman") == 1
+        assert toolchain.do_doctor() == 1
 
     def test_lists_a_missing_optional_tool_without_failing(
         self, monkeypatch, capsys: pytest.CaptureFixture[str]
@@ -376,7 +290,7 @@ class TestDoDoctor:
             "tool_version",
             lambda tool: "not installed" if not tool.required else "1.0.0",
         )
-        assert toolchain.do_doctor("podman") == 0
+        assert toolchain.do_doctor() == 0
         out = capsys.readouterr().out
         assert "not installed" in out
         assert "unavailable" in out
@@ -386,86 +300,17 @@ class TestDoDoctor:
     ) -> None:
         self._patch_all_ok(monkeypatch)
         monkeypatch.setattr(toolchain, "workspace_tool_ok", lambda _name: False)
-        assert toolchain.do_doctor("podman") == 1
+        assert toolchain.do_doctor() == 1
         assert "run: just sync" in capsys.readouterr().out
-
-    def test_fails_when_a_discovered_server_is_not_importable(
-        self, monkeypatch, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        self._patch_all_ok(monkeypatch)
-        monkeypatch.setattr(
-            toolchain, "discover_server_packages", lambda: [("acme-server", "acme_server")]
-        )
-        monkeypatch.setattr(toolchain, "server_package_importable", lambda _module: False)
-        assert toolchain.do_doctor("podman") == 1
-        out = capsys.readouterr().out
-        assert "acme-server" in out
-        assert "NOT INSTALLED" in out
-
-    def test_prints_ok_for_an_importable_discovered_server(
-        self, monkeypatch, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        self._patch_all_ok(monkeypatch)
-        monkeypatch.setattr(
-            toolchain, "discover_server_packages", lambda: [("acme-server", "acme_server")]
-        )
-        monkeypatch.setattr(toolchain, "server_package_importable", lambda _module: True)
-        assert toolchain.do_doctor("podman") == 0
-        assert "acme-server" in capsys.readouterr().out
-
-    def test_reports_engine_not_ready_without_failing(
-        self, monkeypatch, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        self._patch_all_ok(monkeypatch)
-        monkeypatch.setattr(
-            toolchain,
-            "container_engine_status",
-            lambda _engine: (False, "installed but not running"),
-        )
-        monkeypatch.setattr(
-            toolchain.shutil, "which", lambda name: "/usr/bin/podman" if name == "podman" else None
-        )
-        assert toolchain.do_doctor("podman") == 0
-        out = capsys.readouterr().out
-        assert "podman machine start" in out
-        assert "Start the container engine to build images." in out
-
-    def test_suggests_krunkit_on_macos_when_podman_will_not_start(
-        self, monkeypatch, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        self._patch_all_ok(monkeypatch)
-        monkeypatch.setattr(toolchain, "IS_MACOS", True)
-        monkeypatch.setattr(
-            toolchain,
-            "container_engine_status",
-            lambda _engine: (False, "installed but not running"),
-        )
-        monkeypatch.setattr(
-            toolchain.shutil, "which", lambda name: "/usr/bin/podman" if name == "podman" else None
-        )
-        toolchain.do_doctor("podman")
-        assert "krunkit" in capsys.readouterr().out
-
-    def test_omits_the_start_hint_for_a_non_podman_engine(
-        self, monkeypatch, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        self._patch_all_ok(monkeypatch)
-        monkeypatch.setattr(
-            toolchain,
-            "container_engine_status",
-            lambda _engine: (False, "installed but not running"),
-        )
-        toolchain.do_doctor("docker")
-        assert "podman machine start" not in capsys.readouterr().out
 
 
 class TestMain:
     """Test `main`'s argument parsing and install/doctor dispatch."""
 
-    def test_doctor_action_calls_do_doctor_with_the_given_engine(self) -> None:
+    def test_doctor_action_calls_do_doctor(self) -> None:
         with patch.object(toolchain, "do_doctor", return_value=0) as do_doctor:
-            assert toolchain.main(["doctor", "--engine", "docker"]) == 0
-        do_doctor.assert_called_once_with("docker")
+            assert toolchain.main(["doctor"]) == 0
+        do_doctor.assert_called_once_with()
 
     def test_install_action_runs_install_then_doctor(self) -> None:
         with (
@@ -483,8 +328,3 @@ class TestMain:
         ):
             assert toolchain.main(["install"]) == 1
         do_doctor.assert_not_called()
-
-    def test_engine_defaults_to_podman(self) -> None:
-        with patch.object(toolchain, "do_doctor", return_value=0) as do_doctor:
-            toolchain.main(["doctor"])
-        do_doctor.assert_called_once_with("podman")

@@ -13,9 +13,6 @@
 # Windows has no bash by default; `just` falls back to this for shell recipes.
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-# Container engine. Override with `just container=docker <recipe>`.
-container := "podman"
-
 # List available recipes.
 default:
     @just --list
@@ -26,15 +23,15 @@ default:
 
 # Install every required tool (and optional ones if possible), then report.
 install:
-    uv run python scripts/toolchain.py install --engine {{ container }}
+    uv run python scripts/toolchain.py install
 
 # Report the status of the toolchain without changing anything.
 doctor:
-    uv run python scripts/toolchain.py doctor --engine {{ container }}
+    uv run python scripts/toolchain.py doctor
 
-# Install/refresh the workspace dev environment (installs every server too).
+# Install/refresh the dev environment.
 sync:
-    uv sync --all-packages
+    uv sync
 
 # Install the pre-commit git hook (one-time setup).
 install-hooks:
@@ -99,41 +96,13 @@ pre-commit-all:
     uvx pre-commit run --all-files
 
 # ---------------------------------------------------------------------------
-# Plugins and servers
+# Plugins
 # ---------------------------------------------------------------------------
 
 # Scaffold a new plugin from the example-plugin pattern.
 new-plugin name:
     uv run python scripts/new_plugin.py {{ name }}
 
-# Scaffold a new FastMCP server inside an existing plugin.
-new-server plugin name:
-    uv run python scripts/new_server.py {{ plugin }} {{ name }}
-
-# Inspect a server's MCP surface (tools/resources/prompts) as a JSON report.
-inspect-server plugin server:
-    uv run fastmcp inspect {{ plugin }}/servers/{{ server }}/fastmcp.json
-
-# Run a server directly (no container) on http://127.0.0.1:<port>/mcp
-run-server server port="8000":
-    uv run python scripts/run_server.py {{ server }} --port {{ port }}
-
 # Re-download the canonical Agent Plugins JSON Schemas.
 update-schemas version="1.0.0":
     uv run python scripts/update_schemas.py {{ version }}
-
-# ---------------------------------------------------------------------------
-# Containers (podman by default; `just container=docker ...` for docker)
-# ---------------------------------------------------------------------------
-
-# Build a server's image. `--format docker` preserves HEALTHCHECK.
-image-build plugin server tag="latest":
-    {{ container }} build --format docker -f {{ plugin }}/servers/{{ server }}/Dockerfile -t {{ server }}:{{ tag }} .
-
-# Run a server's image locally on http://127.0.0.1:<port>/mcp
-image-run server port="8000" tag="latest":
-    {{ container }} run --rm -p {{ port }}:8000 {{ server }}:{{ tag }}
-
-# Build the image, run it, and verify the MCP endpoint answers over HTTP.
-image-smoke plugin server:
-    uv run python scripts/image_smoke.py {{ plugin }} {{ server }} --engine {{ container }}

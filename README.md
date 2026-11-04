@@ -2,11 +2,10 @@
 
 # Agent Plugins Collection
 
-*Portable Agent Skills and MCP servers, built to the Agent Plugins specification*
+*Portable Agent Skills and MCP server configuration, built to the Agent Plugins specification*
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Agent Plugins spec](https://img.shields.io/badge/Agent%20Plugins-v1.0.0-6f42c1?style=flat-square)](https://agent-plugins.org/specification)
-[![FastMCP](https://img.shields.io/badge/servers-FastMCP-ff7000?style=flat-square)](https://gofastmcp.com/)
 [![uv](https://img.shields.io/badge/tooling-uv-de5fe9?style=flat-square)](https://docs.astral.sh/uv/)
 
 </div>
@@ -23,7 +22,7 @@ is built to the [Agent Plugins Specification v1.0.0](https://agent-plugins.org/s
 | --- | --- | --- |
 | [`aha-feature`](./aha-feature) | Skill that elicits, elaborates, and verifies Aha! features, epics, and requirements as spec-driven records | Aha! (remote, OAuth) — set your subdomain in [`mcp.json`](./aha-feature/mcp.json) |
 | [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders color-coded Mermaid architecture diagrams | none |
-| [`example-plugin`](./example-plugin) | Reference pattern for new plugins | FastMCP example server |
+| [`example-plugin`](./example-plugin) | Reference pattern for new plugins | placeholder remote server |
 
 ## Install a plugin
 
@@ -61,15 +60,14 @@ agent-plugins/
 ├── <plugin>/                    # any top-level directory with a plugin.json
 │   ├── plugin.json              #   required portable manifest
 │   ├── mcp.json                 #   MCP server connections (optional)
-│   ├── skills/<skill>/          #   Agent Skills (PEP 723 scripts)
-│   └── servers/<server>/        #   FastMCP source, built into a container (optional)
+│   └── skills/<skill>/          #   Agent Skills (PEP 723 scripts)
 ├── example-plugin/              # the pattern every new plugin is scaffolded from
 ├── .github/plugin/              # marketplace.json catalog
 ├── schemas/1.0.0/               # vendored Agent Plugins JSON Schemas
 ├── scripts/                     # cross-platform helpers behind the justfile
 ├── tests/                       # repo-level validation (auto-discovers plugins)
 ├── justfile                     # task runner: run `just` to list recipes
-└── pyproject.toml, uv.lock      # uv workspace root, tooling config, one lockfile
+└── pyproject.toml, uv.lock      # tooling config, one lockfile
 ```
 
 ## Development
@@ -79,7 +77,7 @@ The only prerequisite is [`uv`](https://docs.astral.sh/uv/).
 ```bash
 git clone https://github.com/markbsigler/agent-plugins.git && cd agent-plugins
 uv tool install rust-just     # installs `just` from PyPI (all platforms)
-just install                  # installs remaining tools + syncs the workspace
+just install                  # installs remaining tools + syncs the environment
 just check                    # lint + format + types + spelling + tests + security
 ```
 
@@ -90,7 +88,7 @@ are in [CONTRIBUTING.md](./CONTRIBUTING.md). Everything runs on macOS, Linux, an
 
 | Document | Purpose |
 | --- | --- |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Setup, toolchain, creating a plugin, deploying a server, PR checklist |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Setup, toolchain, creating a plugin, PR checklist |
 | [`AGENTS.md`](./AGENTS.md) | Conventions and rationale — read before changing a plugin |
 | [`SECURITY.md`](./SECURITY.md) | Reporting vulnerabilities; credential policy |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Repository changes |
@@ -100,4 +98,3 @@ are in [CONTRIBUTING.md](./CONTRIBUTING.md). Everything runs on macOS, Linux, an
 - Plugin package format — https://agent-plugins.org/specification
 - Skill format — https://agentskills.io/specification
 - MCP protocol — https://modelcontextprotocol.io/specification/
-- FastMCP framework — https://gofastmcp.com/

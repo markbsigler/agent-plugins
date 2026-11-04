@@ -6,4 +6,4 @@ All notable changes to `example-plugin` are documented here. The format follows
 
 ## [0.1.0]
 
-- Initial release: two skills and a containerized FastMCP server.
+- Initial release: a `summarize` skill and an `mcp.json` example.

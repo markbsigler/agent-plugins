@@ -1,4 +1,4 @@
-"""Plugin/skill/server discovery helpers shared by the repo-level tests.
+"""Plugin/skill discovery helpers shared by the repo-level tests.
 
 This lives outside ``conftest.py`` (hooks and fixtures only) and is
 deliberately *not* imported as ``tests.discovery``: a transitive dependency
@@ -30,14 +30,6 @@ def discover_plugins() -> list[Path]:
     excluded by name.
     """
     return sorted((p.parent for p in REPO_ROOT.glob("*/plugin.json")), key=lambda p: p.name)
-
-
-def discover_servers() -> list[Path]:
-    """Return every MCP server package directory across all plugins."""
-    return sorted(
-        (p.parent for p in REPO_ROOT.glob("*/servers/*/pyproject.toml")),
-        key=lambda p: (p.parent.parent.name, p.name),
-    )
 
 
 def discover_skills() -> list[Path]:

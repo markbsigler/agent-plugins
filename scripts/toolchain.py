@@ -13,7 +13,6 @@ Tool tiers:
 * ``uv``    -- required; bootstraps everything else. Cannot self-install.
 * ``just``  -- required; installed from PyPI (``rust-just``) via ``uv tool``,
   which works identically on all three platforms.
-* ``podman``-- optional; only needed to build/run container images.
 * ``trivy`` -- optional; only needed for security scans.
 
 Python tools (ruff, ty, taplo, typos, pytest) come from the uv workspace via
@@ -31,8 +30,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-IS_WINDOWS = sys.platform == "win32"
-IS_MACOS = sys.platform == "darwin"
 
 # Package managers we know how to drive, in preference order per platform.
 # Each entry maps: manager -> (probe command, install command prefix).
@@ -90,13 +87,6 @@ TOOLS: list[Tool] = [
         docs="https://just.systems/man/en/packages.html",
     ),
     Tool(
-        name="podman",
-        required=False,
-        purpose="Build and run container images",
-        package={"winget": "RedHat.Podman"},
-        docs="https://podman.io/docs/installation",
-    ),
-    Tool(
         name="trivy",
         required=False,
         purpose="Vulnerability, secret, and misconfiguration scanning",
@@ -134,21 +124,6 @@ def tool_version(tool: Tool) -> str:
     return output[0].strip() if output else "installed"
 
 
-def container_engine_status(engine: str) -> tuple[bool, str]:
-    """Return whether ``engine`` is usable, plus a human-readable status."""
-    if not shutil.which(engine):
-        return False, "not installed"
-    try:
-        proc = subprocess.run(  # noqa: S603
-            [engine, "info"], capture_output=True, text=True, timeout=60, check=False
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False, "installed but not responding"
-    if proc.returncode == 0:
-        return True, "ready"
-    return False, "installed but not running"
-
-
 def workspace_tool_ok(name: str) -> bool:
     """Check a uv-managed workspace tool is importable/runnable."""
     try:
@@ -163,57 +138,17 @@ def workspace_tool_ok(name: str) -> bool:
     return proc.returncode == 0
 
 
-def discover_server_packages() -> list[tuple[str, str]]:
-    """Return (package name, importable module) for every workspace server."""
-    servers: list[tuple[str, str]] = []
-    for pyproject in REPO_ROOT.glob("*/servers/*/pyproject.toml"):
-        src = pyproject.parent / "src"
-        if not src.is_dir():
-            continue
-        servers.extend(
-            (pyproject.parent.name, candidate.name)
-            for candidate in sorted(src.iterdir())
-            if candidate.is_dir() and (candidate / "__init__.py").is_file()
-        )
-    return sorted(servers)
-
-
-def server_package_importable(module: str) -> bool:
-    """Check a workspace server package is installed in the environment.
-
-    Dev-group tools can be present while workspace members are not (a plain
-    ``uv sync`` omits them), so this is checked separately -- otherwise
-    doctor reports success on an environment where ``just test`` fails.
-    """
-    try:
-        proc = subprocess.run(  # noqa: S603
-            ["uv", "run", "--quiet", "python", "-c", f"import {module}"],  # noqa: S607
-            capture_output=True,
-            timeout=120,
-            check=False,
-            cwd=REPO_ROOT,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return proc.returncode == 0
-
-
-def sync_workspace() -> bool:
-    """Install every workspace member (``uv sync --all-packages``).
-
-    A plain ``uv sync`` installs only the root project's dependency groups
-    and actively *uninstalls* workspace members, so servers must be synced
-    explicitly or their tests cannot import them.
-    """
-    print("  sync     uv sync --all-packages")
+def sync_environment() -> bool:
+    """Install the dev environment from the committed ``uv.lock`` (``uv sync``)."""
+    print("  sync     uv sync")
     try:
         proc = subprocess.run(
-            ["uv", "sync", "--all-packages"],  # noqa: S607
+            ["uv", "sync"],  # noqa: S607
             check=False,
             cwd=REPO_ROOT,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        print(f"    workspace sync failed: {exc}")
+        print(f"    environment sync failed: {exc}")
         return False
     return proc.returncode == 0
 
@@ -278,16 +213,13 @@ def do_install() -> int:
         if any(tool.required for tool in failed):
             return 1
 
-    # Sync the workspace so server packages are importable. Without this the
-    # documented `just install` -> `just check` path fails at collection with
-    # ModuleNotFoundError.
-    if not sync_workspace():
-        print("\nerror: `uv sync --all-packages` failed; the workspace is not usable.")
+    if not sync_environment():
+        print("\nerror: `uv sync` failed; the dev environment is not usable.")
         return 1
     return 0
 
 
-def do_doctor(engine: str) -> int:
+def do_doctor() -> int:
     """Report toolchain status. Returns a process exit code."""
     status = 0
 
@@ -316,30 +248,9 @@ def do_doctor(engine: str) -> int:
             print(f"  {name:<8} MISSING -- run: just sync")
             status = 1
 
-    servers = discover_server_packages()
-    if servers:
-        print("\nWorkspace server packages")
-        for package, module in servers:
-            if server_package_importable(module):
-                print(f"  {package:<24} ok")
-            else:
-                print(f"  {package:<24} NOT INSTALLED -- run: just sync")
-                status = 1
-
-    print(f"\nContainer engine ({engine})")
-    ready, message = container_engine_status(engine)
-    print(f"  {message}")
-    if not ready and engine == "podman" and shutil.which("podman"):
-        print("  start it with: podman machine init   # first time only")
-        print("                 podman machine start")
-        if IS_MACOS:
-            print("  a libkrun machine also needs: brew tap slp/krun && brew install krunkit")
-
     print()
     if status != 0:
         print("Some required tooling is missing.")
-    elif not ready:
-        print("All required tooling present. Start the container engine to build images.")
     else:
         print("All required tooling present and ready.")
     return status
@@ -351,9 +262,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "action", choices=("doctor", "install"), help="Report status, or install missing tools."
     )
-    parser.add_argument(
-        "--engine", default="podman", help="Container engine to check (default: podman)."
-    )
     args = parser.parse_args(argv)
 
     if args.action == "install":
@@ -361,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
         if code != 0:
             return code
         print()
-    return do_doctor(args.engine)
+    return do_doctor()
 
 
 if __name__ == "__main__":

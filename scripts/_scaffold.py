@@ -1,9 +1,7 @@
-"""Shared helpers for the plugin/server scaffolding scripts.
+"""Shared helpers for the plugin scaffolding script.
 
-Both ``new_plugin.py`` and ``new_server.py`` use these so name validation and
-text rewriting behave identically. Keeping them here prevents the two scripts
-from drifting apart -- a mismatch previously let ``new_server.py`` accept
-names that broke the whole uv workspace.
+Name validation and text rewriting live here so ``new_plugin.py`` stays a thin
+command-line wrapper that is easy to test.
 """
 
 from __future__ import annotations
@@ -17,16 +15,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # and period, starting and ending alphanumeric, with no `--` or `..`.
 PLUGIN_NAME_PATTERN = re.compile(r"^(?!.*(?:--|\.\.))[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 
-# Python distribution/package names cannot contain periods: a dotted name
-# would become a `src/my.plugin_server/` directory, which is not importable
-# and makes `[project.scripts]` invalid TOML-to-entry-point mapping.
-DISTRIBUTION_NAME_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
-
 MAX_NAME_LENGTH = 64
 
 
 class InvalidNameError(ValueError):
-    """Raised when a plugin or server name violates its constraints."""
+    """Raised when a plugin name violates its constraints."""
 
 
 def validate_plugin_name(name: str) -> None:
@@ -47,60 +40,15 @@ def validate_plugin_name(name: str) -> None:
         )
 
 
-def validate_server_name(name: str) -> None:
-    """Validate a server name, which must also be a valid Python package name.
-
-    Stricter than :func:`validate_plugin_name`: a server becomes a uv
-    workspace member, so an invalid name breaks ``uv sync`` for *every*
-    package in the repo, not just its own.
-
-    Raises:
-        InvalidNameError: If ``name`` cannot be used as a distribution name.
-    """
-    if not 1 <= len(name) <= MAX_NAME_LENGTH:
-        raise InvalidNameError(
-            f"server name must be 1-{MAX_NAME_LENGTH} characters, got {len(name)}"
-        )
-    if not DISTRIBUTION_NAME_PATTERN.match(name) or "--" in name:
-        raise InvalidNameError(
-            f"{name!r} is not a valid server name.\n"
-            "Server names become Python package names: use lowercase ASCII "
-            "letters, digits, and single hyphens, starting and ending with a "
-            "letter or digit. Periods are not allowed."
-        )
-
-
-def module_name_for(server_name: str) -> str:
-    """Return the importable Python module name for ``server_name``.
-
-    Every character that is legal in a distribution name but not in a Python
-    identifier is mapped to an underscore.
-    """
-    module = re.sub(r"[^0-9a-z]+", "_", server_name.lower())
-    if not module.isidentifier():
-        raise InvalidNameError(f"cannot derive a Python module name from {server_name!r}")
-    return module
-
-
-def default_server_name(plugin_name: str) -> str:
-    """Derive a server name from a plugin name, dropping illegal characters.
-
-    Plugin names may contain periods; server names may not, so ``acme.tools``
-    yields ``acme-tools-server``.
-    """
-    stem = re.sub(r"[^0-9a-z]+", "-", plugin_name.lower()).strip("-")
-    return f"{stem}-server"
-
-
 def rewrite_text(text: str, replacements: dict[str, str]) -> str:
     """Apply ``replacements`` to ``text`` in a single pass.
 
     Each source region is rewritten at most once, so text produced by one
-    replacement is never re-scanned by another. Applying the replacements
-    sequentially instead would corrupt output whenever a replacement *value*
-    contains another replacement *key* -- for example, rewriting
-    ``example-server`` to ``my-example-plugin-server`` and then rewriting
-    ``example-plugin`` inside the result.
+    replacement is never re-scanned by another. Applying replacements
+    sequentially would corrupt output whenever a replacement *value* contains
+    a replacement *key* -- for example, rewriting ``example-plugin`` to
+    ``my-example-plugin`` and then rewriting ``example-plugin`` inside the
+    result.
 
     Longer keys are matched first so overlapping keys resolve unambiguously.
     """

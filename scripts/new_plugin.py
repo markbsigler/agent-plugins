@@ -5,10 +5,10 @@ Usage:
     just new-plugin acme-tools
     uv run python scripts/new_plugin.py acme-tools
 
-Copies the template, renames the bundled server package, and rewrites the
-identifiers so the result passes ``just check`` immediately -- except for the
-metadata you are expected to personalise (description, author, deployed
-server URL), which the manifest tests deliberately flag until you edit them.
+Copies the template and rewrites the identifiers so the result passes
+``just check`` immediately -- except for the metadata you are expected to
+personalise (description, author, MCP server URL), which the manifest tests
+deliberately flag until you edit them.
 """
 
 from __future__ import annotations
@@ -25,19 +25,13 @@ if TYPE_CHECKING:
 from _scaffold import (
     REPO_ROOT,
     InvalidNameError,
-    default_server_name,
-    module_name_for,
     rewrite_file,
     validate_plugin_name,
-    validate_server_name,
 )
 
 TEMPLATE = REPO_ROOT / "example-plugin"
-TEMPLATE_SERVER = "example-server"
-TEMPLATE_MODULE = "example_server"
 TEMPLATE_PLUGIN = "example-plugin"
 
-# Suffixes worth rewriting. Files with no suffix (Dockerfile) are included.
 TEXT_SUFFIXES = {".py", ".json", ".toml", ".md", ".txt", ".yaml", ".yml", ""}
 
 
@@ -46,23 +40,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("name", help="Name of the new plugin (also the directory name).")
     parser.add_argument(
-        "--server-name",
-        default=None,
-        help="Name for the bundled MCP server (default: derived from the plugin name).",
-    )
-    parser.add_argument(
-        "--no-server",
+        "--no-mcp",
         action="store_true",
-        help="Omit the example MCP server (skills-only plugin).",
+        help="Omit mcp.json (skills-only plugin).",
     )
     args = parser.parse_args(argv)
 
     name: str = args.name
     try:
         validate_plugin_name(name)
-        server_name: str = args.server_name or default_server_name(name)
-        validate_server_name(server_name)
-        server_module = module_name_for(server_name)
     except InvalidNameError as exc:
         return _fail(str(exc))
 
@@ -76,56 +62,33 @@ def main(argv: list[str] | None = None) -> int:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".venv", "*.egg-info"),
     )
 
-    if args.no_server:
-        shutil.rmtree(destination / "servers", ignore_errors=True)
+    if args.no_mcp:
         (destination / "mcp.json").unlink(missing_ok=True)
-        replacements = {TEMPLATE_PLUGIN: name}
-    else:
-        old_server = destination / "servers" / TEMPLATE_SERVER
-        new_server = destination / "servers" / server_name
-        old_server.rename(new_server)
-        (new_server / "src" / TEMPLATE_MODULE).rename(new_server / "src" / server_module)
-        replacements = {
-            TEMPLATE_SERVER: server_name,
-            TEMPLATE_MODULE: server_module,
-            TEMPLATE_PLUGIN: name,
-        }
 
     # Single pass per file: replacement output is never re-scanned, so a name
-    # containing "example-plugin" cannot corrupt the generated server name.
+    # containing "example-plugin" cannot corrupt itself.
     for path in destination.rglob("*"):
         if path.is_file() and path.suffix in TEXT_SUFFIXES:
             try:
-                rewrite_file(path, replacements)
+                rewrite_file(path, {TEMPLATE_PLUGIN: name})
             except UnicodeDecodeError:
                 continue  # binary asset; leave untouched
 
-    if args.no_server:
-        # The template README documents servers/, mcp.json, and FASTMCP_*
-        # env vars throughout -- none of which exist in a --no-server
-        # scaffold. Rewriting it in place would leave stale, contradictory
-        # instructions (and a reference to a directory just deleted above),
-        # so generate a minimal, accurate one instead.
-        (destination / "README.md").write_text(
-            _no_server_readme(name), encoding="utf-8", newline="\n"
-        )
+    if args.no_mcp:
+        # The template README documents mcp.json; rewriting it in place would
+        # leave stale instructions for a file that was just removed.
+        (destination / "README.md").write_text(_no_mcp_readme(name), encoding="utf-8", newline="\n")
 
     _reset_manifest(destination / "plugin.json", name)
-    _print_next_steps(name, server_name, server_module, with_server=not args.no_server)
+    _print_next_steps(name, with_mcp=not args.no_mcp)
     return 0
 
 
-def _no_server_readme(name: str) -> str:
-    """Generate a minimal, accurate README for a skills-only plugin.
-
-    The template README documents servers/, mcp.json, and FASTMCP_* env
-    vars throughout, so it cannot simply be copied and name-rewritten for a
-    ``--no-server`` scaffold without leaving stale, contradictory content.
-    """
+def _no_mcp_readme(name: str) -> str:
+    """Generate a minimal, accurate README for a skills-only plugin."""
     return f"""# {name}
 
-An [Agent Plugin](https://agent-plugins.org/) with no bundled MCP server --
-skills only.
+An [Agent Plugin](https://agent-plugins.org/) with skills only and no MCP servers.
 
 ```text
 {name}/
@@ -142,15 +105,8 @@ everything else.
 
 ## Adding an MCP server later
 
-If this plugin later needs an MCP server, scaffold one with:
-
-```bash
-just new-server {name} <server-name>
-```
-
-That creates a FastMCP server package under `servers/`. You will then need to
-add an `mcp.json` at this plugin's root with a `streamable-http` entry
-pointing at the server once you deploy it -- see
+Add an `mcp.json` at this plugin's root. It connects to servers that run
+elsewhere (`streamable-http`) or launches a local command (`stdio`); see
 [`example-plugin/mcp.json`](../example-plugin/mcp.json) for the shape.
 
 ## Canonical references
@@ -177,18 +133,17 @@ def _reset_manifest(manifest_path: Path, name: str) -> None:
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
-def _print_next_steps(name: str, server: str, module: str, *, with_server: bool) -> None:
+def _print_next_steps(name: str, *, with_mcp: bool) -> None:
     print(f"Created {name}/")
     print()
     print("Next steps:")
     print(f"  1. Edit {name}/plugin.json      (description, author, keywords, license)")
     print(f"  2. Rename/replace skills in {name}/skills/")
-    if with_server:
-        print(f"  3. Edit {name}/mcp.json         (URL of your deployed server)")
-        print(f"  4. Implement tools in {name}/servers/{server}/src/{module}/server.py")
-        print("  5. just sync && just check")
+    if with_mcp:
+        print(f"  3. Edit {name}/mcp.json         (point it at your MCP server)")
+        print("  4. just check")
     else:
-        print("  3. just sync && just check")
+        print("  3. just check")
 
 
 if __name__ == "__main__":

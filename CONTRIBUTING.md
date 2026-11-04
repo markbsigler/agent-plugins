@@ -3,9 +3,9 @@
 Thanks for contributing. This is the single guide for working in this repository:
 setup, the toolchain, how to build a plugin, and the pull request process.
 [`AGENTS.md`](./AGENTS.md) is the source of truth for conventions and the reasons behind
-them — the `uv`-only toolchain, the split between PEP 723 skill scripts and packaged
-servers, and the portability rules that keep the repo working on Windows. Read it before
-changing a plugin.
+them — the `uv`-only toolchain, the spec-defined plugin layout, PEP 723 skill scripts, and
+the portability rules that keep the repo working on Windows. Read it before changing a
+plugin.
 
 ## Contents
 
@@ -13,7 +13,7 @@ changing a plugin.
 - [Ground rules](#ground-rules)
 - [Toolchain](#toolchain)
 - [Creating a plugin](#creating-a-plugin)
-- [Deploying a plugin's server](#deploying-a-plugins-server)
+- [Configuring an MCP server](#configuring-an-mcp-server)
 - [Pull requests](#pull-requests)
 - [Reporting bugs](#reporting-bugs)
 
@@ -35,7 +35,7 @@ Then, on any platform:
 ```bash
 git clone https://github.com/markbsigler/agent-plugins.git && cd agent-plugins
 uv tool install rust-just     # installs `just` from PyPI (all platforms)
-just install                  # installs remaining tools + syncs the workspace
+just install                  # installs remaining tools + syncs the environment
 just check                    # lint + format + types + spelling + tests + security
 ```
 
@@ -46,7 +46,7 @@ every recipe.
 ## Ground rules
 
 **Use the scaffolding.** Run `just new-plugin <name>` rather than hand-building a plugin
-directory. It applies the naming rules and wires up the workspace.
+directory. It applies the naming rules and keeps the layout spec-conformant.
 
 **`just check` must pass.** There is no CI on this repository, so the test suite and
 pre-commit hooks are the only enforcement. Run `just install-hooks` once so checks run on
@@ -60,18 +60,16 @@ Windows. Anything needing a loop, conditional, or cleanup handler goes in `scrip
 a secrets mechanism. Agent Plugins v1 has no portable credential field; authentication is
 client-managed.
 
-**Keep tests at the repo root.** Plugin tests live in `tests/` (servers keep theirs in
-`<plugin>/servers/<server>/tests/`). Plugins never import from each other.
+**Keep tests at the repo root.** Plugin tests live in `tests/`. Plugins never import from each other.
 
 ## Toolchain
 
 All Python tooling runs through [`uv`](https://docs.astral.sh/uv/) — no `venv`, `pip`,
-`pyenv`, or `poetry`. The repo is a **uv workspace**: each server is its own package,
-resolved into one root `uv.lock` so container builds are reproducible.
+`pyenv`, or `poetry`. One root `uv.lock` pins the dev tooling.
 
 | Tool | Purpose | Required? | Recipe |
 | --- | --- | --- | --- |
-| [`uv`](https://docs.astral.sh/uv/) | Packaging + workspace | **Required** | `just sync` |
+| [`uv`](https://docs.astral.sh/uv/) | Packaging + environment | **Required** | `just sync` |
 | [`just`](https://just.systems/) | Task runner (PyPI: `rust-just`) | **Required** | `just --list` |
 | [`ruff`](https://docs.astral.sh/ruff/) | Lint + format | **Required** | `just lint` / `just fmt` |
 | [`ty`](https://docs.astral.sh/ty/) | Type check | **Required** | `just typecheck` |
@@ -80,18 +78,11 @@ resolved into one root `uv.lock` so container builds are reproducible.
 | [`pytest`](https://docs.pytest.org/) | Tests + coverage | **Required** | `just test` |
 | [`pre-commit`](https://pre-commit.com/) | Git hooks | **Required** | `just install-hooks` |
 | [`trivy`](https://trivy.dev/) | Vulnerabilities, secrets, misconfig | Optional | `just security` |
-| [`podman`](https://podman.io/) | Container build + run | Optional | `just image-build` |
 
-Everything except `podman` and `trivy` installs from PyPI through `uv`. Without those two
-you can still develop, test, and lint: `just security` skips cleanly without `trivy`, and
-only the container recipes need `podman`. `just install` detects Homebrew, apt, dnf,
-pacman, zypper, winget, scoop, or Chocolatey and prints manual instructions if it finds
-none.
-
-Containers are built with Podman (rootless, daemonless). The `Dockerfile` is OCI-standard,
-so Docker works too: `just container=docker <recipe>`. On macOS, a `libkrun` Podman machine
-also needs `krunkit` (`brew tap slp/krun && brew install krunkit`); `just doctor` says so
-if the machine won't start.
+Everything except `trivy` installs from PyPI through `uv`. Without `trivy` you can still
+develop, test, and lint: `just security` skips cleanly. `just install` detects Homebrew,
+apt, dnf, pacman, zypper, winget, scoop, or Chocolatey and prints manual instructions if it
+finds none.
 
 ## Creating a plugin
 
@@ -101,13 +92,11 @@ if the machine won't start.
 just new-plugin acme-tools
 ```
 
-This copies [`example-plugin/`](./example-plugin), renames the bundled server package and
-Python module, and rewrites every identifier. You get a working plugin: manifest, two
-example skills, and a containerized FastMCP server with tests.
+This copies [`example-plugin/`](./example-plugin) and rewrites every identifier. You get
+a working plugin: manifest, `mcp.json`, and an example `summarize` skill.
 
 ```bash
-just new-plugin acme-tools --server-name acme-api   # different server name
-just new-plugin acme-tools --no-server              # skills-only plugin
+just new-plugin acme-tools --no-mcp                 # skills-only plugin, no mcp.json
 ```
 
 ### 2. Fill in the TODOs
@@ -118,14 +107,9 @@ is the guardrail, not a bug.
 | File | What to change |
 | --- | --- |
 | `acme-tools/plugin.json` | `description`, `author`, `keywords`, `license` |
-| `acme-tools/mcp.json` | `url` → your deployed server (the template `example.com` URL is rejected) |
-| `acme-tools/skills/` | Replace or rename the example skills, or delete them |
-| `acme-tools/servers/*/src/*/server.py` | Implement your tools |
+| `acme-tools/mcp.json` | `url` → a server you run or use (the template `example.com` URL is rejected), or delete the file |
+| `acme-tools/skills/` | Replace or rename the example `summarize` skill |
 | `acme-tools/README.md` | Describe your plugin |
-
-Then install the new server into the workspace with `just sync`, which runs
-`uv sync --all-packages`. A plain `uv sync` skips new servers and their tests fail to
-import.
 
 ### 3. Write skills
 
@@ -167,51 +151,11 @@ chmod +x scripts/lookup.py                      # macOS / Linux
 git update-index --chmod=+x scripts/lookup.py   # any platform, incl. Windows
 ```
 
-### 4. Write MCP servers
-
-Servers use [FastMCP](https://gofastmcp.com/) and implement the
-[Model Context Protocol](https://modelcontextprotocol.io/specification/). Define tools in
-`server.py` and keep transport concerns in `__main__.py`, so the `mcp` object stays
-importable for fast in-memory tests:
-
-```python
-from fastmcp import FastMCP
-
-mcp = FastMCP(name="acme-server")
-
-
-@mcp.tool
-def lookup(part_number: str) -> dict[str, str]:
-    """Look up an Acme part. The docstring becomes the tool description."""
-    ...
-```
-
-```bash
-just new-server acme-tools acme-api          # add another server to a plugin
-just inspect-server acme-tools acme-api      # dump the tool/resource surface
-just image-build acme-tools acme-api         # build the container image
-just image-run acme-api                      # run it locally on :8000/mcp
-just image-smoke acme-tools acme-api         # build, run, and verify over HTTP
-```
-
-### 5. Test
+### 4. Test
 
 ```bash
 just test          # everything, with the coverage gate
 just test-fast     # skip subprocess/network round trips
-```
-
-Server tests use FastMCP's in-memory transport — full protocol, no network, no ports:
-
-```python
-from fastmcp import Client
-from acme_server import mcp
-
-
-async def test_lookup():
-    async with Client(mcp) as client:
-        result = await client.call_tool("lookup", {"part_number": "A-1"})
-    assert result.data == {...}
 ```
 
 Repo-level tests **auto-discover** every `*/plugin.json`, so a new plugin is validated
@@ -224,22 +168,19 @@ For verbose expected values, use
 `just snapshot-fix`, then **review the diff** — a passing fix means code and test agree, not
 that the value is correct.
 
-### 6. Publish through the marketplace
+### 5. Publish through the marketplace
 
 The repo is also a plugin marketplace. Add a catalog entry for the new plugin to
 [`.github/plugin/marketplace.json`](./.github/plugin/marketplace.json) (`name`, `description`,
 `version`, and `source` of `./<plugin>`). `tests/test_marketplace.py` fails if an entry
 drifts from its `plugin.json`, so bump both together.
 
-## Deploying a plugin's server
+## Configuring an MCP server
 
-`mcp.json` records a `url`, so the server must already be running somewhere the client can
-reach. A client never launches these servers; it only connects.
-
-```bash
-just image-build example-plugin example-server   # build the container
-# push to your registry and deploy it, then set that URL in <plugin>/mcp.json
-```
+Agent Plugins 1.0.0 defines two component locations: `skills/` and `mcp.json`. A plugin
+declares the MCP servers it needs in `mcp.json`; it does not bundle server source, and a
+client never launches a `streamable-http` server, it only connects to the `url`. Host any
+server you write in its own repository.
 
 ```json
 {
@@ -259,13 +200,14 @@ just image-build example-plugin example-server   # build the container
 > `headers` are visible package data, so credentials must never go there. The tests reject
 > credential-looking header names, but never rely on that as your only safeguard.
 
-`servers/` is **build-time source**, not a portable component — clients ignore it. It lives
-beside the plugin so the two stay versioned together.
+Tests also fail when a plugin has a top-level entry the spec does not define (such as
+`servers/`); client-specific extensions belong in a reverse-domain directory like
+`com.example.client/`.
 
 ## Pull requests
 
 Keep PRs focused on one plugin or one concern. In the description, say what the plugin does
-and, if it ships an MCP server, where it is deployed.
+and, if it uses an MCP server, where that server is hosted.
 
 - [ ] `just check` passes
 - [ ] The new-plugin checklist in [`AGENTS.md` §4](./AGENTS.md#4-checklist-for-a-new-plugin)

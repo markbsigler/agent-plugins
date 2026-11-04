@@ -14,7 +14,6 @@
 *.sh     text eol=lf
 *.bash   text eol=lf
 justfile text eol=lf
-Dockerfile text eol=lf
 *.toml   text eol=lf
 *.yaml   text eol=lf
 *.yml    text eol=lf
@@ -22,7 +21,6 @@ Dockerfile text eol=lf
 *.md     text eol=lf
 .gitattributes text eol=lf
 .gitignore     text eol=lf
-.dockerignore  text eol=lf
 
 # Windows-native helpers keep CRLF.
 *.bat text eol=crlf
