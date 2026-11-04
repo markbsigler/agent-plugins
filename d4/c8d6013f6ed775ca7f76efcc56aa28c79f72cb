@@ -1,0 +1,61 @@
+tests/discovery.py
+  s_446f9b3d4bdfe9::t_44fa30a8f39a05 1
+tests/test_toolchain.py
+  s_446f9b3d4bdfe9::t_8d5d16176595bd 303,310,312-313
+  s_446f9b3d4bdfe9::t_b96bd3dde26518 135-136,140-141,145,151-152
+  s_446f9b3d4bdfe9::t_a58d2e3f1d3f14 43,45-46,180,185,189,209,220,230,248,252,256,258,272,282,293
+example-plugin/CHANGELOG.md
+  s_446f9b3d4bdfe9::t_9db573d450295c 9
+example-plugin/README.md
+  s_446f9b3d4bdfe9::t_190970ca8e72c4 10-15,18,21-25,31-34,36-39,44-45
+scripts/toolchain.py
+  s_446f9b3d4bdfe9::t_dc07c31321929d 141-143,146,151,216-217,222,272
+tests/test_scaffolding.py
+  s_446f9b3d4bdfe9::t_4dd23953a2ed60 1,3-4,6-7,35-37,69,82-84,104,106-109,145-148,153-163,166-167,169-173,175-177,203,206,208,214-215
+scripts/_scaffold.py
+  s_446f9b3d4bdfe9::t_297609fb7112b4 1,3-4,22,47-51
+scripts/new_plugin.py
+  s_446f9b3d4bdfe9::t_ee3ef3333573b7 8-11,43,45,65,69,73,77-80,83,87-88,91,108-109,136,142-144,146
+tests/conftest.py
+  s_446f9b3d4bdfe9::t_d9b2f0ac9efedc 4-5,15,28
+example-plugin/skills/summarize/references/summary-guidelines.md
+  s_446f9b3d4bdfe9::t_e69303cedac71e 1-21
+pyproject.toml
+  s_446f9b3d4bdfe9::t_ee8ed48e10f769 99,103,109,119,125-126
+AGENTS.md
+  s_446f9b3d4bdfe9::t_faa029cade7171 6,24,39,44,46-47,53,57,59,61,64,135-139,143-144,174-176,178,180-182,186,194,196,203-204,220,222,233,240,261,265,279-282
+CHANGELOG.md
+  s_446f9b3d4bdfe9::t_74e7629715cb68 15-16,18-19,24,30,32,34-37
+CONTRIBUTING.md
+  s_446f9b3d4bdfe9::t_05ea68c5009b19 6-8,16,38,49,63,68,72,82-85,95-96,99,110-111,154,171,178,180-183,203-205,210
+README.md
+  s_446f9b3d4bdfe9::t_858d8b99fd17d1 5,25,63,70,80,91
+SECURITY.md
+  s_446f9b3d4bdfe9::t_7ac34b436e1cb3 15,17,21-22
+example-plugin/plugin.json
+  s_446f9b3d4bdfe9::t_7d47ed1d49802d 5
+example-plugin/skills/summarize/SKILL.md
+  s_446f9b3d4bdfe9::t_61f0344e90ec72 2-3,9,11-13,17,21,23-25,27-29,31-35,40-44
+justfile
+  s_446f9b3d4bdfe9::t_30a61f9496f79c 26,30,32,34,99
+tests/test_manifests.py
+  s_446f9b3d4bdfe9::t_16919af593ddc4 19,274-294
+tests/test_skill_scripts.py
+  s_446f9b3d4bdfe9::t_b2ab6b6f68f687 69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d4c8d6013f6ed775ca7f76efcc56aa28c79f72cb",
+  "prompts": {},
+  "sessions": {
+    "s_446f9b3d4bdfe9": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "47b05882-7fd1-4773-a315-4d4f1c641c01",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
