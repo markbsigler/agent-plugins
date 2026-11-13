@@ -45,6 +45,8 @@ All notable changes to the repository tooling are documented here. The format fo
   ISPF variable `ZUSER`, and similar) and ignores the hex tokens of code-page tables.
 - `AGENTS.md` now notes that industry analyst research can inform a plugin's patterns and use
   cases but is not a specification, so plugins describe those practices in their own words.
+- `.gitignore` re-includes `*.sql`, which some global ignore files exclude, so SQL templates
+  that plugins ship are always tracked.
 
 ### Removed
 

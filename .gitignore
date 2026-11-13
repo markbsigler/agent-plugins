@@ -29,3 +29,7 @@ venv/
 .DS_Store
 .vscode/
 !.vscode/extensions.json
+
+# Plugins ship SQL templates. Re-include *.sql, which some global ignore files
+# (core.excludesFile) exclude; patterns in this file take precedence over them.
+!*.sql
