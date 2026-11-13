@@ -21,13 +21,13 @@ Define what the tests observe before writing them:
 2. **Freeze the environment:** virtual or injected dates, control cards and `PARM` values, reference data, Db2 state (unload before, load to reset), GDG generations, and collating sequence.
 3. **Run the baseline** and capture outputs, return codes, SYSOUT, and database end state.
 4. **Run the candidate** with identical inputs and compare:
-   - Use the layout JSON from `scripts/copybook_layout.py` to compare field by field and to name the field that differs.
-   - Compare packed fields by value and, for Refactor, also by bytes; a change of sign nibble (`F` to `C`) is a difference until it is proven harmless and approved.
+   - Compare field by field with the `copybook-data` skill's `record_compare.py`, which decodes both files with the layout, matches records by key or position, and names the field that differs.
+   - Compare packed fields by value and, for Refactor, also by bytes; a change of sign nibble (`F` to `C`) is a difference until it is proven harmless and approved. `record_compare.py` reports these differences in format only separately.
    - Check record counts, trailer control totals, and hash totals.
    - Check sort order of every output that is consumed in order.
 5. **Explain every difference.** Zero unexplained differences is the only passing result.
 
-Comparison tooling: mainframe compare utilities (for example the ISPF SuperC compare, or file-management products that compare with copybook layouts), DFSORT `JOINKEYS` jobs, or an off-platform comparison of binary-transferred files decoded with the layout.
+Comparison tooling: mainframe compare utilities (for example the ISPF SuperC compare, run by this skill's [../assets/compare-outputs.jcl](../assets/compare-outputs.jcl), or file-management products that compare with copybook layouts), DFSORT `JOINKEYS` jobs, or an off-platform comparison of binary-transferred files decoded with the layout (`record_compare.py`).
 
 ## Online golden master
 
@@ -44,8 +44,8 @@ Comparison tooling: mainframe compare utilities (for example the ISPF SuperC com
 
 ## Test data management
 
-- Mask or subset production data for privacy and regulatory rules (for example GDPR, PCI DSS, HIPAA).
-- Keep masked data valid for the layout: packed and zoned fields must stay valid, check digits must still check, key order and uniqueness must be preserved, and the same value must mask identically across files, Db2, IMS, and VSAM so joins and match-merges still work.
+- Mask or subset production data for privacy and regulatory rules (for example GDPR, PCI DSS, HIPAA). The `copybook-data` skill's `record_mask.py` masks by field from the layout.
+- Keep masked data valid for the layout: packed and zoned fields must stay valid, check digits must still check, keys must stay unique (and files must be re-sorted where key order matters), and the same value must mask identically across files, Db2, IMS, and VSAM so joins and match-merges still work.
 - Synthesize data for edge cases that production lacks.
 
 ## Parallel run and reconciliation

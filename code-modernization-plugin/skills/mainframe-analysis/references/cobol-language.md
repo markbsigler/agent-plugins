@@ -53,7 +53,7 @@ Rules for any edit:
 - `88` levels name values; `SET condition TO TRUE` moves the first value listed.
 - `66 RENAMES` regroups contiguous storage.
 - `JUSTIFIED RIGHT`, `BLANK WHEN ZERO`, and `SIGN LEADING` or `TRAILING`, `SEPARATE` change the stored bytes.
-- `SYNCHRONIZED` inserts slack bytes to align binary items, which shifts offsets. Compute layouts with the `copybook_layout.py` script and confirm with the compiler `MAP` listing.
+- `SYNCHRONIZED` inserts slack bytes to align binary items, which shifts offsets. Compute layouts with the `copybook-data` skill's `copybook_layout.py`, which inserts the slack bytes, and confirm with the compiler `MAP` listing.
 - `INITIALIZE` sets alphanumeric fields to spaces and numeric fields to zero, skips `FILLER` unless `WITH FILLER` is coded, skips pointers and indexes, and skips subordinate items that redefine storage (and their children), so only the first definition of an overlay is initialized. Items without `VALUE` clauses have no defined initial contents; programs sometimes depend on whatever the runtime leaves there.
 
 ## Arithmetic

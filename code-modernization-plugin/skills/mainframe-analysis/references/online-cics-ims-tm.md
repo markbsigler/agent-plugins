@@ -32,7 +32,7 @@
 ## CICS modernization patterns
 
 - **Refactor in place:** replace `HANDLE` with `RESP` checks, move from COMMAREA to channels and containers when size limits bite, make programs threadsafe to reduce TCB switching, and separate presentation from business logic (a BMS program that `LINK`s to a business-logic program with a defined COMMAREA). Each is a behavior-preserving change with its own characterization tests.
-- **Seam for rearchitecture:** the business-logic program with a defined COMMAREA or container copybook is the natural seam. Its copybook becomes the source of the API contract (`copybook_layout.py --format json-schema`).
+- **Seam for rearchitecture:** the business-logic program with a defined COMMAREA or container copybook is the natural seam. Its copybook becomes the source of the API contract (the `copybook-data` skill's `copybook_layout.py --format json-schema`).
 - **Strangler routing:** expose the business-logic program through an API layer (z/OS Connect or CICS Liberty), put a gateway in front, and route per operation; or add a router program that `LINK`s to either the legacy or the new implementation behind a toggle.
 - **Latency budget:** a local `LINK` costs microseconds; a network call costs milliseconds. Count `LINK`s and file requests per business transaction before moving a slice off the platform, and keep chatty interactions co-located.
 

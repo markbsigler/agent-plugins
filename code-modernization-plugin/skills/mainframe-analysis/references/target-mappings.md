@@ -46,7 +46,7 @@
 
 ## Transition patterns for strangling mainframe workloads
 
-- **Encapsulate first.** Expose existing programs through z/OS Connect (REST to CICS, IMS, and Db2), CICS web services, IMS Connect, or MQ. An API gateway in front becomes the strangler facade. Generate the contract from the copybook (`scripts/copybook_layout.py --format json-schema`) and review it.
+- **Encapsulate first.** Expose existing programs through z/OS Connect (REST to CICS, IMS, and Db2), CICS web services, IMS Connect, or MQ. An API gateway in front becomes the strangler facade. Generate the contract from the copybook (the `copybook-data` skill's `copybook_layout.py --format json-schema`) and review it.
 - **Branch by abstraction in COBOL.** Insert a router program between callers and the implementation. It reads a toggle (a Db2 control table, a VSAM control record, or a container value) and routes to the legacy program or to the new implementation by key range, percentage, or operation. Default to the legacy path.
 - **Data during transition.** Use log-based change data capture from Db2, IMS, or VSAM to keep the new store current; use a transactional outbox (a Db2 table plus MQ) to publish events from inside the CICS unit of work. Avoid dual writes from COBOL to remote databases. Plan reverse replication if the new side becomes the writer before cutover, and reconcile continuously.
 - **Batch.** Carve job streams at data set boundaries, because input and output files are natural seams. Run the new step in parallel, reconcile outputs, then switch the schedule.

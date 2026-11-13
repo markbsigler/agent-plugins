@@ -7,6 +7,11 @@
 - Conditions: `ON` units (`ERROR`, `ENDFILE`, `CONVERSION`, `ZERODIVIDE`, `FIXEDOVERFLOW`, `SIZE`) handle errors, and condition prefixes enable or disable checks per statement. Control can resume after a handler, which has no direct equivalent in most languages.
 - The preprocessor (`%INCLUDE`, `%IF`, `%DCL`) generates code; analyze the expanded source from the compiler listing.
 - PL/I and COBOL call each other under Language Environment; check parameter conventions at every inter-language call.
+- Editing rules: source lies inside the margins, `MARGINS(2,72)` by default for fixed-length records (`MARGINS(10,100)` for variable-length records), and the compiler ignores column 1 and columns 73-80. Never write outside the margins or insert tabs, and keep sequence numbers.
+- The compiler joins the text inside the margins record to record without adding a blank, so a token that reaches column 72 runs into the next line; keep a blank between tokens at line ends.
+- Comments are `/* ... */`, may span lines, and do not nest. Start them in column 2 or later: column 1 is outside the margins, and in JCL in-stream data `/*` in columns 1-2 ends the data.
+- `%INCLUDE member;` or `%INCLUDE ddname(member);` copies text from `SYSLIB` or the named DD; included members must have the same record format, record length, and margins as the program.
+- `¬` (NOT) and `|` (OR) are code-page variant characters; the `NOT` and `OR` compiler options name substitutes such as `^` or `!`. Keep the shop's convention.
 
 ## High Level Assembler (HLASM)
 
@@ -14,6 +19,10 @@
 - System macros reveal purpose: storage (`GETMAIN`, `FREEMAIN`, `STORAGE`), I/O (`OPEN`, `CLOSE`, `GET`, `PUT`, `READ`, `WRITE`), time (`TIME`, `STCK`), program management (`LINK`, `LOAD`, `XCTL`, `CALL`), serialization (`ENQ`, `DEQ`), recovery (`ESTAE`, `ESPIE`), messages (`WTO`, `WTOR`), and dynamic allocation (`SVC 99`).
 - Assembler typically implements shared date routines, encryption, compression, high-volume I/O, and exits (JES, SMF, security, CICS task-related user exits, IMS exits, sort exits). Decimal instructions (`AP`, `SP`, `MP`, `DP`, `ZAP`, `PACK`, `UNPK`, `CVB`, `CVD`, `ED`, `EDMK`) define exact arithmetic and editing.
 - Approach: classify each module by purpose; replace it with a platform service or reimplement it from characterized behavior. Do not machine-translate Assembler without equivalence proof. Watch for self-modifying code, `EX` instructions, and installation-specific macros.
+- Editing rules: the statement field is columns 1-71. A name starts in column 1 (a blank in column 1 means no name); the operation and operands follow, separated by blanks (by convention in columns 10 and 16).
+- To continue a statement, put a nonblank character in column 72 and start the next line in column 16. A comment that reaches column 72 continues too, so the next line becomes part of the comment.
+- Columns 73-80 are the identification-sequence field; keep it. `ICTL` can move the begin, end, and continue columns, so check for it first.
+- `*` in column 1 marks a comment and `.*` an internal macro comment that is not generated; comments cannot sit between a statement and its continuation lines. BMS maps, IMS PSB and DBD source, and MFS formats follow the same column rules.
 
 ## REXX and CLIST
 

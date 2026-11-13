@@ -14,12 +14,19 @@ from pathlib import Path
 import pytest
 from discovery import REPO_ROOT, discover_plugins, discover_skills
 
-# The aha-feature scripts import each other as top-level modules, as they do when run directly.
+# Skill scripts import their sibling scripts as top-level modules, as they do when run directly.
 _AHA_FEATURE_SCRIPTS = REPO_ROOT / "aha-feature" / "skills" / "aha-feature" / "scripts"
-_MAINFRAME_SCRIPTS = (
-    REPO_ROOT / "code-modernization-plugin" / "skills" / "mainframe-analysis" / "scripts"
+_MODERNIZATION_SKILLS = REPO_ROOT / "code-modernization-plugin" / "skills"
+# mainframe-analysis comes first, so its copy of the vendored zos_encoding module is the one
+# that tests import and coverage measures; the other copies are kept identical by a test.
+_SCRIPT_DIRS = (
+    _AHA_FEATURE_SCRIPTS,
+    _MODERNIZATION_SKILLS / "mainframe-analysis" / "scripts",
+    _MODERNIZATION_SKILLS / "copybook-data" / "scripts",
+    _MODERNIZATION_SKILLS / "mainframe-batch-flow" / "scripts",
+    _MODERNIZATION_SKILLS / "mainframe-program-docs" / "scripts",
 )
-for _scripts in (_AHA_FEATURE_SCRIPTS, _MAINFRAME_SCRIPTS):
+for _scripts in reversed(_SCRIPT_DIRS):
     if str(_scripts) not in sys.path:
         sys.path.insert(0, str(_scripts))
 

@@ -41,6 +41,32 @@ Request the whole artifact set in one round, record what is missing, and keep th
 - CICS statistics, Db2 package usage, and scheduler history to find unused programs, transactions, and jobs. Removing dead inventory before estimating often shrinks the scope substantially.
 - Abend history (S0C7, S0C4, timeouts) by program; it shows where invalid data and fragile logic live.
 
+## Exports the bundled scripts read
+
+Request these in the same round as the rest of the checklist. People export them; the agent never connects to z/OS. Templates in this skill's `assets/` directory produce several of them, and the platform team reviews and submits every template.
+
+| Evidence | How to produce | Read by |
+| --- | --- | --- |
+| Program source, copybooks, JCL and procedures, BMS and MFS maps | The production libraries or SCM stage named as the source of truth | `mainframe_inventory.py`; the `copybook-data` skill's `copybook_layout.py`; the `mainframe-batch-flow` skill's `batch_flow.py`; the `mainframe-program-docs` skill's `cobol_flow.py` and `screen_map.py` |
+| Data set records (golden masters and test data) | Binary transfers of the data sets, keeping RDWs for variable-length records, with each data set's RECFM and LRECL | The `copybook-data` skill's `record_decode.py`, `record_compare.py`, and `record_mask.py` |
+| Usage evidence | SMF type 30 step records summarized to a CSV per program; CICS program and transaction statistics; Db2 `LASTUSED` from `SYSIBM.SYSPACKAGE` (query 1 in [../assets/db2-catalog.sql](../assets/db2-catalog.sql)); scheduler run history. Each CSV needs a name column (`name`, `program`, `member`, `package`, `job`, or `transaction`) and may have a count column (`count`, `uses`, or `executions`); a row without a count counts as one use | `mainframe_inventory.py --usage` |
+| CICS CSD extract | `DFHCSDUP EXTRACT` with the supplied program `DFH0CBDC`, which writes `DEFINE` commands: [../assets/csd-extract.jcl](../assets/csd-extract.jcl) | `mainframe_inventory.py` |
+| Scheduler definitions | Control-M XML from `exportdeffolder` or `exportdefjob`; IBM Z Workload Scheduler batch-loader statements (`ADSTART`, `ADOP`, `ADDEP`), for example extracted with Workload Automation Programming Language; CA 7 `LJOB` listings of requirements and triggers, converted to a `predecessor,successor` CSV | The `mainframe-batch-flow` skill's `batch_flow.py` for dependencies; `mainframe_inventory.py` for jobs in no schedule |
+| MQSC definitions | `CSQUTIL COMMAND` with `MAKEDEF`: [../assets/mqsc-export.jcl](../assets/mqsc-export.jcl) | `mainframe_inventory.py` |
+| Catalog entries | `IDCAMS LISTCAT ... ALL`: [../assets/listcat.jcl](../assets/listcat.jcl) | `mainframe_inventory.py`, which prefers the catalog over IDCAMS `DEFINE` statements and reports where they disagree |
+| Compiler and binder listings | The listings the build keeps (compile with `LIST` or `MAP` and the options in production; binder `LIST,MAP,XREF`) | `mainframe_inventory.py` (compiler release, options, AMODE, RMODE) |
+| Db2 BIND statements | The bind control cards or the SCM's bind definitions | `mainframe_inventory.py` |
+| IMS DBD and PSB source | DBDGEN and PSBGEN source from the IMS libraries or the SCM | `ims_model.py`, and `mainframe_inventory.py` for PSB names |
+| Db2 catalog extracts | Packages, dependencies, plan package lists, tables, columns with CCSIDs, and index keys: [../assets/db2-catalog.sql](../assets/db2-catalog.sql), run by [../assets/db2-catalog-unload.jcl](../assets/db2-catalog-unload.jcl) | The agent, for the Db2 sections of the estate brief and the data ownership matrix |
+
+Later stages use [../assets/explain-compare.sql](../assets/explain-compare.sql) (access paths before and after a rebind) and [../assets/compare-outputs.jcl](../assets/compare-outputs.jcl) (golden-master comparison with SuperC).
+
+When exporting:
+
+- Choose the transfer mode by content, as "Record formats and transfers" in [data-and-encoding.md](data-and-encoding.md) describes: binary for data sets, and for source whose code page is unknown; text only for source and reports that the transfer converts with the right code page.
+- Put each kind in its own directory, and record the source data set, RECFM, LRECL, code page, and transfer mode of every file so the estate brief can cite them.
+- Keep production data out of Git: export it into an ignored directory, and mask records with the `copybook-data` skill's `record_mask.py` before sharing them.
+
 ## Hidden interfaces to look for
 
 - Programs started dynamically: `CALL identifier`, `EXEC CICS LINK PROGRAM(variable)`, `START TRANSID`, MQ triggers, and scheduler-driven `PARM` values.

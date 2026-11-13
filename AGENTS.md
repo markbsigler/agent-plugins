@@ -15,7 +15,7 @@ Read this file before adding or modifying a plugin. For the contributor walkthro
 | Plugin | Contents |
 | --- | --- |
 | [`aha-feature`](./aha-feature) | Aha! feature/epic/requirement skill; `mcp.json` for the Aha! remote MCP server |
-| [`code-modernization-plugin`](./code-modernization-plugin) | Stack-neutral Refactor vs. Rearchitect triage and 4-stage playbooks, pluggable stack profiles (first: IBM Z mainframe skill and scripts), Copilot/Cursor extensions |
+| [`code-modernization-plugin`](./code-modernization-plugin) | Stack-neutral Refactor vs. Rearchitect triage and 4-stage playbooks, pluggable stack profiles (first: IBM Z mainframe skill and scripts), mainframe tool skills (copybook data, batch flow, program docs), Copilot/Cursor extensions |
 | [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders Mermaid architecture diagrams |
 | [`example-plugin`](./example-plugin) | Template for new plugins; **not** listed in the marketplace |
 
@@ -277,9 +277,22 @@ just test-fast     # skip tests marked `slow`
   `uv run python scripts/x.py` per scenario: a subprocess can't be measured in-process and
   lets slow system dependencies creep in. Keep at most one real subprocess smoke test per
   script to prove the CLI wiring (see `test_new_plugin_cli_works_as_documented`).
-- Skill scripts that tests import directly (as the `aha-feature` and `mainframe-analysis`
-  scripts are) need their directory in three places: `sys.path` in `tests/conftest.py`,
-  `[tool.ty.environment].extra-paths`, and `[tool.coverage.run].source`.
+- Skill scripts that tests import directly (as the `aha-feature` scripts and the scripts of
+  the four `code-modernization-plugin` mainframe skills are) need their directory in three
+  places: `sys.path` in `tests/conftest.py`, `[tool.ty.environment].extra-paths`, and
+  `[tool.coverage.run].source`. Every directory on `sys.path` shares one module namespace, so
+  script file names must be unique across those skills.
+- Skills stay self-contained, so a helper several skills need is vendored: each mainframe
+  skill carries an identical copy of `zos_encoding.py`. Edit the `mainframe-analysis` copy,
+  which tests import and coverage measures, then copy it over the others;
+  `tests/test_zos_encoding.py` fails while the copies differ, and `[tool.coverage.run].omit`
+  lists the copies.
+- `tests/mainframe_fixtures.py` builds mainframe test data (fixed-format source, EBCDIC
+  members, packed and zoned fields, RDWs, and a synthetic estate touching every subsystem) at
+  test time; prefer it to committed binary fixtures. For a real-world check, set
+  `CARDDEMO_DIR` to a clone of
+  [aws-samples/aws-mainframe-modernization-carddemo](https://github.com/aws-samples/aws-mainframe-modernization-carddemo)
+  and run `just test`; the test that reads it is skipped otherwise.
 
 ### 4.5 Code quality
 
@@ -310,7 +323,8 @@ Everything runs through `just`; prefer recipes over retyping commands, and updat
 
 `ty` skips PEP 723 scripts (`[tool.ty.src].exclude`) because their dependencies live in
 `uv`'s per-script cache, and it needs `extra-paths` for `scripts/`, `tests/`, and the
-`aha-feature` and `mainframe-analysis` scripts. Type-check a skill script with
+`aha-feature`, `mainframe-analysis`, `copybook-data`, `mainframe-batch-flow`, and
+`mainframe-program-docs` scripts. Type-check a skill script with
 `uv run --with ty --with <deps> ty check <path>`.
 
 For `trivy`: fix real findings rather than suppressing them. If a finding is a reviewed false

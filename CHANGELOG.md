@@ -10,9 +10,12 @@ All notable changes to the repository tooling are documented here. The format fo
 
 - `code-modernization-plugin` with Refactor vs. Rearchitect triage, stack-neutral
   4-stage gated playbooks, pluggable stack profiles (the first is the IBM Z `mainframe-analysis`
-  skill), and Copilot/Cursor client extensions. `tests/test_mainframe_analysis.py` covers the
-  inventory and copybook layout scripts and checks that every registered stack profile provides
-  each stage section the playbooks call.
+  skill), the `copybook-data`, `mainframe-batch-flow`, and `mainframe-program-docs` tool
+  skills, and Copilot/Cursor client extensions. `tests/test_mainframe_analysis.py` checks that
+  every registered stack profile provides each stage section the playbooks call; per-script
+  tests build a synthetic estate (`tests/mainframe_fixtures.py`) with EBCDIC members generated
+  at test time, a test keeps the vendored copies of `zos_encoding.py` identical, and an
+  opt-in test runs the inventory and seam report against a CardDemo clone (`CARDDEMO_DIR`).
 - Spec-conformance tests that extension namespaces are reverse-domain identifiers and that
   `./` paths in `extensions` stay inside the plugin root, that `SKILL.md` links stay inside
   the skill, and that manifests contain no `TODO` placeholders.
@@ -38,6 +41,8 @@ All notable changes to the repository tooling are documented here. The format fo
 - `just new-plugin --no-server` is now `--no-mcp`; `just sync` runs a plain `uv sync`.
 - `AGENTS.md` §2.6 and the `README.md` client table now follow spec §8: extension namespaces
   belong to the client that defines them, and other clients ignore them.
+- `typos` allows mainframe vocabulary (JCL `PARM` and `RLSE`, the BMS `HILIGHT` attribute, the
+  ISPF variable `ZUSER`, and similar) and ignores the hex tokens of code-page tables.
 - `AGENTS.md` now notes that industry analyst research can inform a plugin's patterns and use
   cases but is not a specification, so plugins describe those practices in their own words.
 

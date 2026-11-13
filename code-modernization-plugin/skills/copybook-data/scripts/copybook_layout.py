@@ -8,16 +8,19 @@
 Parses IBM Enterprise COBOL data description entries in fixed or free format and reports
 each field's 1-based position, byte length, picture, usage, digits, scale, OCCURS and
 REDEFINES structure, 88-level conditions, and a DFSORT format hint. It can also draft a
-JSON Schema for API contracts. The script only reads files.
+JSON Schema, an Avro schema, an AsyncAPI document, or DFSORT symbols, and compare two
+layouts to find breaking changes. The script only reads files.
 
-Storage rules follow IBM Enterprise COBOL with LP(32). SYNCHRONIZED slack bytes are not
-computed; confirm such layouts against the compiler MAP listing.
+Storage rules follow IBM Enterprise COBOL with LP(32), including the slack bytes that
+SYNCHRONIZED items add; confirm such layouts against the compiler MAP listing.
 
 Examples:
     uv run --script copybook_layout.py CUSTREC.cpy
     uv run --script copybook_layout.py CUSTREC.cpy --format markdown
     uv run --script copybook_layout.py CUSTREC.cpy --format json-schema
+    uv run --script copybook_layout.py CUSTREC.cpy --format dfsort-symbols
     uv run --script copybook_layout.py ORDERS.cpy --copylib copybooks --replace :PFX: WS
+    uv run --script copybook_layout.py OLD/CUSTREC.cpy --diff NEW/CUSTREC.cpy --format markdown
 """
 
 from __future__ import annotations
@@ -52,8 +55,23 @@ ASSUMPTIONS = (
         "Fields inside an OCCURS table describe the first occurrence; occurrence n starts "
         "(n - 1) * stride bytes later."
     ),
-    "SYNCHRONIZED slack bytes are not computed.",
+    (
+        "SYNCHRONIZED binary, COMP-1, COMP-2, INDEX, and pointer items are aligned relative to "
+        "the start of the record, with slack bytes inserted before them (or before the group "
+        "they start), and OCCURS tables that contain them get slack bytes after each occurrence."
+    ),
 )
+# Boundaries for SYNCHRONIZED items under LP(32); binary items use 2 or 4 by size.
+SYNC_ALIGNMENT = {
+    "COMP-1": 4,
+    "COMP-2": 8,
+    "INDEX": 4,
+    "POINTER": 4,
+    "POINTER-32": 4,
+    "PROCEDURE-POINTER": 4,
+    "FUNCTION-POINTER": 4,
+    "OBJECT-REFERENCE": 4,
+}
 
 USAGE_ALIASES = {
     "DISPLAY": "DISPLAY",
@@ -140,6 +158,8 @@ DFSORT_FORMATS = {
     "alphabetic": "CH",
     "alphanumeric-edited": "CH",
     "numeric-edited": "CH",
+    "hex": "BI",
+    "bit": "BI",
 }
 
 EARLY_LEVEL = re.compile(r"^ {0,6}\d{1,2}\s+\S")
@@ -215,6 +235,10 @@ class Item:
     leading: bool = False
     separate: bool = False
     variable_offset: bool = False
+    slack_before: int = 0
+    slack_after: int = 0
+    bit_offset: int | None = None
+    bits: int | None = None
 
     @property
     def total_size(self) -> int:
@@ -715,6 +739,60 @@ class _LayoutState:
     after_odo: bool = False
 
 
+def _propagate_sync(item: Item, warnings: list[str], inherited: bool = False) -> None:
+    """Apply SYNCHRONIZED on a group to every elementary item it contains."""
+    if item.sync and item.children and item.level != 1 and not inherited:
+        warnings.append(
+            f"line {item.line}: SYNCHRONIZED on group {item.name} below level 01; "
+            "applied to its elementary items"
+        )
+    inherited = inherited or (item.sync and bool(item.children))
+    for child in item.children:
+        if inherited and not child.children:
+            child.sync = True
+        _propagate_sync(child, warnings, inherited)
+
+
+def _leading_alignment(item: Item, usage: str) -> int:
+    """Return the boundary that the first elementary item of ``item`` must start on."""
+    while item.children:
+        usage = item.usage or usage
+        item = item.children[0]
+    if not item.sync:
+        return 1
+    usage = item.usage or usage
+    if usage in {"BINARY", "COMP-5"}:
+        if not item.picture:
+            return 1
+        picture = _analyze_picture(item.picture)
+        if picture.category != "numeric":
+            return 1
+        return 2 if picture.digits <= 4 else 4
+    return SYNC_ALIGNMENT.get(usage, 1)
+
+
+def _max_alignment(item: Item) -> int:
+    """Return the largest boundary required by any SYNCHRONIZED item within ``item``."""
+    if item.children:
+        return max((_max_alignment(child) for child in item.children), default=1)
+    if not item.sync:
+        return 1
+    if item.category == "binary":
+        return 2 if item.size == 2 else 4
+    return SYNC_ALIGNMENT.get(item.effective_usage, 1)
+
+
+def _absorb_slack(item: Item, slack: int) -> None:
+    """Extend the groups that end with the preceding elementary item.
+
+    IBM places slack bytes immediately after the elementary item that precedes a
+    SYNCHRONIZED item, at that item's level, so they count in the size of its groups.
+    """
+    while item.children and item.occurs_max is None:
+        item.size += slack
+        item = next((c for c in reversed(item.children) if not c.redefines), item.children[-1])
+
+
 def _layout(
     item: Item, offset: int, inherited: tuple[str, bool, bool], state: _LayoutState
 ) -> None:
@@ -724,11 +802,6 @@ def _layout(
     item.effective_usage = item.usage or usage
     item.leading = leading if item.sign_leading is None else item.sign_leading
     item.separate = separate if item.sign_separate is None else item.sign_separate
-    if item.sync:
-        state.warnings.append(
-            f"line {item.line}: {item.name} is SYNCHRONIZED; slack bytes are not computed, "
-            "so verify offsets against the compiler MAP listing"
-        )
     if not item.children:
         _size_elementary(item, state.warnings)
         return
@@ -738,6 +811,7 @@ def _layout(
     cursor = offset
     end = offset
     seen: dict[str, Item] = {}
+    previous: Item | None = None
     for child in item.children:
         target = seen.get(child.redefines) if child.redefines else None
         if child.redefines and target is None:
@@ -745,8 +819,23 @@ def _layout(
                 f"line {child.line}: {child.name} REDEFINES {child.redefines}, "
                 "which is not an earlier sibling"
             )
-        start = target.offset if target is not None else cursor
+        alignment = _leading_alignment(child, item.effective_usage)
+        if target is not None:
+            start = target.offset
+            if start % alignment:
+                state.warnings.append(
+                    f"line {child.line}: {target.name} is not on the {alignment}-byte boundary "
+                    f"that the SYNCHRONIZED items in {child.name} need"
+                )
+        else:
+            start = cursor + (-cursor) % alignment
+            child.slack_before = start - cursor
+            if child.slack_before and previous is not None:
+                _absorb_slack(previous, child.slack_before)
         _layout(child, start, context, state)
+        if child.occurs_max is not None and child.children:
+            child.slack_after = (-child.size) % _max_alignment(child)
+            child.size += child.slack_after
         if target is not None and child.total_size > target.total_size:
             state.warnings.append(
                 f"line {child.line}: {child.name} is longer than {target.name}, which it "
@@ -754,6 +843,7 @@ def _layout(
             )
         if target is None:
             cursor = start + child.total_size
+            previous = child
         end = max(end, start + child.total_size)
         seen[child.name] = child
         if child.depending_on:
@@ -886,6 +976,7 @@ def parse_copybook(
             items.append(item)
     records = _build_records(items, warnings, default_name)
     for record in records:
+        _propagate_sync(record, warnings)
         _layout(record, 0, ("DISPLAY", False, False), _LayoutState(warnings))
         _resolve_aliases(record, warnings)
     return Layout(str(source), records, warnings)
@@ -948,6 +1039,12 @@ def _field(item: Item, path: str, occurs_in: list[dict[str, Any]]) -> dict[str, 
         "variable_offset": item.variable_offset,
     }
     entry.update({flag: True for flag, enabled in flags.items() if enabled})
+    if item.slack_before:
+        entry["slack_before"] = item.slack_before
+    if item.slack_after:
+        entry["slack_after"] = item.slack_after
+    if item.bits is not None:
+        entry.update(bit_offset=item.bit_offset, bits=item.bits)
     return entry
 
 
@@ -1148,6 +1245,12 @@ def _notes(entry: dict[str, Any]) -> str:
         notes.append("offset assumes maximum OCCURS")
     if entry.get("sync"):
         notes.append("SYNC")
+    if entry.get("slack_before"):
+        notes.append(f"{entry['slack_before']} slack bytes before")
+    if entry.get("slack_after"):
+        notes.append(f"{entry['slack_after']} slack bytes after each occurrence")
+    if entry.get("bits") is not None:
+        notes.append(f"{entry['bits']} bits from bit {entry['bit_offset']}")
     return "; ".join(notes).replace("|", "\\|")
 
 
@@ -1175,18 +1278,481 @@ def layout_to_markdown(layout: Layout) -> str:
     return "\n".join(lines)
 
 
+TYPE_KEYS = ("category", "usage", "digits", "scale", "signed", "sign")
+STORAGE_CLASS = {
+    "alphabetic": "character",
+    "alphanumeric": "character",
+    "alphanumeric-edited": "character",
+    "numeric-edited": "character",
+    "external-float": "character",
+    "hex": "character",
+    "national-edited": "national",
+    "national-decimal": "national",
+}
+DFSORT_SYMBOL = re.compile(r"[^A-Za-z0-9#$@_-]")
+AVRO_NAME = re.compile(r"[^A-Za-z0-9_]")
+SCHEMA_FORMAT = "application/schema+json;version=draft-2020-12"
+
+
+def _summary(entry: dict[str, Any]) -> dict[str, Any]:
+    keys = ("position", "length", "total_length", "picture", "usage", "category", "occurs")
+    return {key: entry[key] for key in keys if entry.get(key) is not None}
+
+
+def _named_fields(layout: Layout, *, drop_record: bool) -> dict[str, dict[str, Any]]:
+    fields: dict[str, dict[str, Any]] = {}
+    for record in layout_to_dict(layout)["records"]:
+        for entry in record["fields"]:
+            if entry["name"] == "FILLER":
+                continue
+            key = entry["path"].split(".", 1)[1] if drop_record else entry["path"]
+            base, suffix = key, 2
+            while key in fields:
+                key, suffix = f"{base}#{suffix}", suffix + 1
+            fields[key] = entry
+    return fields
+
+
+def _field_changes(before: dict[str, Any], after: dict[str, Any]) -> list[tuple[str, bool]]:
+    checks = (
+        ("moved", before["offset"] != after["offset"], True),
+        ("resized", before["total_length"] != after["total_length"], True),
+        ("retyped", any(before.get(k) != after.get(k) for k in TYPE_KEYS), True),
+        ("occurs", before.get("occurs") != after.get("occurs"), True),
+        ("redefines", before.get("redefines") != after.get("redefines"), True),
+        ("conditions", before.get("conditions") != after.get("conditions"), False),
+        ("value", before.get("value") != after.get("value"), False),
+    )
+    return [(kind, breaking) for kind, changed, breaking in checks if changed]
+
+
+def _elementary_by_offset(layout: Layout) -> list[dict[int, dict[str, Any]]]:
+    """Return, per record, the elementary fields of the base view keyed by offset."""
+    records = []
+    for record in layout_to_dict(layout)["records"]:
+        overlays: list[str] = []
+        by_offset: dict[int, dict[str, Any]] = {}
+        for entry in record["fields"]:
+            if entry.get("redefines"):
+                overlays.append(entry["path"] + ".")
+            if "picture" not in entry or entry.get("redefines"):
+                continue
+            if any(entry["path"].startswith(prefix) for prefix in overlays):
+                continue
+            by_offset.setdefault(entry["offset"], entry)
+        records.append(by_offset)
+    return records
+
+
+def _storage(entry: dict[str, Any]) -> tuple[Any, ...]:
+    category = STORAGE_CLASS.get(entry["category"], entry["category"])
+    return (category, entry["total_length"], entry.get("digits"), entry.get("scale"))
+
+
+def diff_layouts(old: Layout, new: Layout, *, match: str = "name") -> dict[str, Any]:
+    """Compare two layouts and classify each difference as breaking or not.
+
+    ``match="name"`` pairs fields by qualified name; ``match="position"`` pairs elementary
+    fields by offset, which also compares layouts written in different languages.
+    """
+    old_records = layout_to_dict(old)["records"]
+    new_records = layout_to_dict(new)["records"]
+    changes: list[dict[str, Any]] = []
+    single = len(old_records) == 1 and len(new_records) == 1
+    new_by_name = {record["name"]: record for record in new_records}
+    pairs = (
+        [(old_records[0], new_records[0])]
+        if single
+        else [(record, new_by_name.get(record["name"])) for record in old_records]
+    )
+    for before, after in pairs:
+        if after is None:
+            changes.append({"field": before["name"], "kinds": ["record-removed"], "breaking": True})
+        elif before["length"] != after["length"]:
+            changes.append(
+                {
+                    "field": after["name"],
+                    "kinds": ["record-length"],
+                    "breaking": True,
+                    "old": {"length": before["length"]},
+                    "new": {"length": after["length"]},
+                }
+            )
+    if not single:
+        old_names = {record["name"] for record in old_records}
+        changes.extend(
+            {"field": record["name"], "kinds": ["record-added"], "breaking": False}
+            for record in new_records
+            if record["name"] not in old_names
+        )
+    if match == "position":
+        for index, (before_map, after_map) in enumerate(
+            zip(_elementary_by_offset(old), _elementary_by_offset(new), strict=False)
+        ):
+            for offset in sorted(set(before_map) | set(after_map)):
+                before_field, after_field = before_map.get(offset), after_map.get(offset)
+                label = f"record {index + 1} position {offset + 1}"
+                if before_field is None and after_field is not None:
+                    changes.append(
+                        {
+                            "field": f"{label} ({after_field['name']})",
+                            "kinds": ["added"],
+                            "breaking": True,
+                            "new": _summary(after_field),
+                        }
+                    )
+                    continue
+                if after_field is None and before_field is not None:
+                    changes.append(
+                        {
+                            "field": f"{label} ({before_field['name']})",
+                            "kinds": ["removed"],
+                            "breaking": True,
+                            "old": _summary(before_field),
+                        }
+                    )
+                    continue
+                if before_field is None or after_field is None:
+                    continue
+                kinds: list[str] = []
+                if _storage(before_field) != _storage(after_field):
+                    kinds.append("retyped")
+                if before_field["name"] != after_field["name"]:
+                    kinds.append("renamed")
+                if kinds:
+                    changes.append(
+                        {
+                            "field": f"{label} ({before_field['name']} / {after_field['name']})",
+                            "kinds": kinds,
+                            "breaking": "retyped" in kinds,
+                            "old": _summary(before_field),
+                            "new": _summary(after_field),
+                        }
+                    )
+    else:
+        before_fields = _named_fields(old, drop_record=single)
+        after_fields = _named_fields(new, drop_record=single)
+        for key, before_field in before_fields.items():
+            after_field = after_fields.get(key)
+            if after_field is None:
+                changes.append(
+                    {
+                        "field": key,
+                        "kinds": ["removed"],
+                        "breaking": True,
+                        "old": _summary(before_field),
+                    }
+                )
+                continue
+            found = _field_changes(before_field, after_field)
+            if found:
+                changes.append(
+                    {
+                        "field": key,
+                        "kinds": [kind for kind, _ in found],
+                        "breaking": any(breaking for _, breaking in found),
+                        "old": _summary(before_field),
+                        "new": _summary(after_field),
+                    }
+                )
+        changes.extend(
+            {"field": key, "kinds": ["added"], "breaking": False, "new": _summary(entry)}
+            for key, entry in after_fields.items()
+            if key not in before_fields
+        )
+    return {
+        "old": old.source,
+        "new": new.source,
+        "match": match,
+        "breaking": any(change["breaking"] for change in changes),
+        "changes": changes,
+        "warnings": [f"old: {w}" for w in old.warnings] + [f"new: {w}" for w in new.warnings],
+    }
+
+
+def _describe(summary: dict[str, Any] | None) -> str:
+    if not summary:
+        return ""
+    if "position" not in summary:
+        return f"{summary.get('length')} bytes"
+    parts = [f"pos {summary['position']}", f"len {summary.get('total_length', '')}"]
+    if summary.get("picture"):
+        parts.append(summary["picture"])
+    if summary.get("usage") and summary["usage"] != "DISPLAY":
+        parts.append(summary["usage"])
+    if summary.get("occurs"):
+        parts.append(f"OCCURS {summary['occurs']['max']}")
+    return ", ".join(parts).replace("|", "\\|")
+
+
+def diff_to_markdown(diff: dict[str, Any]) -> str:
+    """Render a layout comparison as a Markdown table."""
+    verdict = "breaking changes found" if diff["breaking"] else "no breaking changes"
+    lines = [
+        "# Layout comparison",
+        "",
+        f"- **Old:** {diff['old']}",
+        f"- **New:** {diff['new']}",
+        f"- **Matched by:** {diff['match']}",
+        f"- **Result:** {verdict}",
+        "",
+    ]
+    if diff["changes"]:
+        lines += ["| Field | Change | Breaking | Old | New |", "| :-- | :-- | :-- | :-- | :-- |"]
+        lines.extend(
+            f"| {change['field']} | {', '.join(change['kinds'])} "
+            f"| {'yes' if change['breaking'] else 'no'} | {_describe(change.get('old'))} "
+            f"| {_describe(change.get('new'))} |"
+            for change in diff["changes"]
+        )
+        lines.append("")
+    if diff["warnings"]:
+        lines += ["## Warnings", "", *(f"- {warning}" for warning in diff["warnings"]), ""]
+    return "\n".join(lines)
+
+
+def _occurrences(
+    tables: list[dict[str, Any]], limit: int, notes: list[str], name: str
+) -> list[tuple[str, int]]:
+    """Return (suffix, byte delta) for every occurrence of a field inside OCCURS tables."""
+    combos: list[tuple[str, int]] = [("", 0)]
+    for table in tables:
+        count = table["max"]
+        if count > limit:
+            notes.append(
+                f"* {name}: only the first {limit} of {count} occurrences of {table['name']}"
+            )
+            count = limit
+        combos = [
+            (f"{suffix}_{index + 1}", delta + index * table["stride"])
+            for suffix, delta in combos
+            for index in range(count)
+        ]
+    return combos
+
+
+def layout_to_dfsort_symbols(layout: Layout, *, rdw: bool = False, limit: int = 100) -> str:
+    """Render DFSORT SYMNAMES statements (``name,position,length,format``) for each field.
+
+    Fields inside OCCURS tables get one symbol per occurrence, suffixed ``_1``, ``_2``, and
+    so on. With ``rdw``, positions include the 4-byte record descriptor word.
+    """
+    base = 5 if rdw else 1
+    lines = [
+        f"* DFSORT symbols for {Path(layout.source).name}, drafted by copybook_layout.py",
+        "* Positions are 1-based" + ("; they include the 4-byte RDW." if rdw else "."),
+    ]
+    used: set[str] = set()
+    for record in layout_to_dict(layout)["records"]:
+        lines.append(f"* Record {record['name']}: {record['length']} bytes")
+        for entry in record["fields"]:
+            if entry["name"] == "FILLER":
+                continue
+            dfsort = entry.get("dfsort") or ("CH" if "picture" not in entry else None)
+            if dfsort is None:
+                lines.append(f"* {entry['name']}: no DFSORT format for {entry['category']} data")
+                continue
+            tables = list(entry.get("occurs_in", []))
+            if entry.get("occurs"):
+                tables.append(
+                    {
+                        "name": entry["name"],
+                        "max": entry["occurs"]["max"],
+                        "stride": entry["length"],
+                    }
+                )
+            notes: list[str] = []
+            for suffix, delta in _occurrences(tables, limit, notes, entry["name"]):
+                symbol = DFSORT_SYMBOL.sub("_", entry["name"] + suffix)
+                if not (symbol[0].isalpha() or symbol[0] in "#$@"):
+                    symbol = f"F{symbol}"
+                if symbol in used:
+                    parent = entry["path"].rsplit(".", 2)[-2]
+                    symbol = DFSORT_SYMBOL.sub("_", f"{parent}_{symbol}")
+                used.add(symbol)
+                position = entry["offset"] + delta + base
+                lines.append(f"{symbol[:50]},{position},{entry['length']},{dfsort}")
+            lines.extend(notes)
+    return "\n".join(lines) + "\n"
+
+
+def _avro_name(name: str, names: str) -> str:
+    base = AVRO_NAME.sub("_", _camel(name) if names == "camel" else name.replace("-", "_"))
+    return base if base[:1].isalpha() or base[:1] == "_" else f"_{base}"
+
+
+def _avro_numeric(item: Item) -> Any:
+    digits = item.digits or 0
+    scale = item.scale or 0
+    if scale <= 0:
+        precision = digits - scale
+        if precision <= 9:
+            return "int"
+        if precision <= 18:
+            return "long"
+        return {"type": "bytes", "logicalType": "decimal", "precision": precision, "scale": 0}
+    return {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": max(digits, scale),
+        "scale": scale,
+    }
+
+
+def _avro_elementary(item: Item) -> Any:
+    if item.category in NUMERIC_CATEGORIES:
+        return _avro_numeric(item)
+    if item.category == "float":
+        return "float" if item.effective_usage == "COMP-1" else "double"
+    if item.category in {"index", "pointer", "pointer-32", "procedure-pointer"}:
+        return None
+    if item.category in {"function-pointer", "object-reference", "unknown"}:
+        return None
+    return "string"
+
+
+def _avro_doc(item: Item) -> str:
+    parts = [f"COBOL {item.name}"]
+    if item.picture:
+        parts.append(f"PIC {item.picture}")
+    if not item.children:
+        parts.append(item.effective_usage)
+    parts.append(f"position {item.offset + 1}, {item.size} byte{'' if item.size == 1 else 's'}")
+    if item.depending_on:
+        parts.append(f"OCCURS DEPENDING ON {item.depending_on}")
+    parts.extend(f"88 {c.name} = {' '.join(c.values)}" for c in item.conditions)
+    return "; ".join(parts)
+
+
+def _avro(item: Item, names: str, warnings: list[str], types: set[str]) -> Any:
+    if item.children:
+        fields: list[dict[str, Any]] = []
+        field_names: set[str] = set()
+        for child in item.children:
+            if child.name == "FILLER":
+                continue
+            if child.redefines:
+                warnings.append(
+                    f"{child.name}: REDEFINES {child.redefines} has no Avro form; omitted, and "
+                    f"{child.redefines} carries the bytes"
+                )
+                continue
+            child_type = _avro(child, names, warnings, types)
+            if child_type is None:
+                continue
+            field_name, suffix = _avro_name(child.name, names), 2
+            while field_name in field_names:
+                field_name, suffix = f"{_avro_name(child.name, names)}_{suffix}", suffix + 1
+            field_names.add(field_name)
+            fields.append({"name": field_name, "type": child_type, "doc": _avro_doc(child)})
+        type_name = _avro_name(item.name, "cobol")
+        base, suffix = type_name, 2
+        while type_name in types:
+            type_name, suffix = f"{base}_{suffix}", suffix + 1
+        types.add(type_name)
+        schema: Any = {
+            "type": "record",
+            "name": type_name,
+            "doc": _avro_doc(item),
+            "fields": fields,
+        }
+    else:
+        schema = _avro_elementary(item)
+        if schema is None:
+            warnings.append(f"{item.name}: {item.category} items have no Avro form; omitted")
+            return None
+    if item.occurs_max is None:
+        return schema
+    return {"type": "array", "items": schema}
+
+
+def layout_to_avro(layout: Layout, names: str = "camel") -> dict[str, Any]:
+    """Draft an Avro schema with exact decimals; several records become a union."""
+    warnings: list[str] = []
+    types: set[str] = set()
+    schemas = [_avro(record, names, warnings, types) for record in layout.records]
+    result: dict[str, Any] = {"schema": schemas[0] if len(schemas) == 1 else schemas}
+    all_warnings = [*layout.warnings, *warnings]
+    if all_warnings:
+        result["warnings"] = all_warnings
+    return result
+
+
+def layout_to_asyncapi(
+    layout: Layout, names: str = "camel", channel: str | None = None
+) -> dict[str, Any]:
+    """Draft an AsyncAPI 3.0 document whose messages carry each record as a JSON payload."""
+    schema = layout_to_json_schema(layout, names)
+    warnings = schema.pop("x-cobol-warnings", [])
+    schema.pop("$schema")
+    definitions = schema.get("$defs") or {schema["title"]: schema}
+    messages = {
+        _avro_name(name, "camel"): {
+            "name": name,
+            "title": name,
+            "contentType": "application/json",
+            "payload": {"schemaFormat": SCHEMA_FORMAT, "schema": payload},
+        }
+        for name, payload in definitions.items()
+    }
+    address = channel or Path(layout.source).stem.upper()
+    document: dict[str, Any] = {
+        "asyncapi": "3.0.0",
+        "info": {
+            "title": f"{address} messages",
+            "version": "0.1.0",
+            "description": "Draft generated from a COBOL copybook; review before use.",
+        },
+        "channels": {
+            _avro_name(re.sub(r"[^A-Za-z0-9]+", "-", address), "camel"): {
+                "address": address,
+                "messages": {key: {"$ref": f"#/components/messages/{key}"} for key in messages},
+            }
+        },
+        "components": {"messages": messages},
+    }
+    if warnings:
+        document["x-cobol-warnings"] = warnings
+    return document
+
+
+def _load(path: str, args: argparse.Namespace) -> Layout:
+    replacements = [(old, new) for old, new in args.replace]
+    if args.language == "cobol":
+        layout = parse_copybook(path, copylibs=args.copylib, replacements=replacements)
+    else:
+        import pli_hlasm_layout  # noqa: PLC0415  # sibling module that imports this one
+
+        layout = pli_hlasm_layout.parse_source(
+            path, language=args.language, copylibs=args.copylib, replacements=replacements
+        )
+    if args.record:
+        layout.records = [r for r in layout.records if r.name == args.record.upper()]
+    return layout
+
+
 def main(argv: list[str] | None = None) -> int:
-    """Parse arguments, compute the layout, and print it."""
+    """Parse arguments, compute the layout, and print it.
+
+    Returns 0 on success and 1 on errors. With ``--diff`` it returns 0 when there are no
+    breaking changes, 1 when there are, and 2 on errors, like diff(1).
+    """
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("copybook", help="Copybook file to analyze, or - for standard input.")
     parser.add_argument(
+        "--language",
+        choices=["auto", "cobol", "pli", "hlasm"],
+        default="auto",
+        help="Source language: COBOL copybook, PL/I structure, or HLASM DSECT (default: auto).",
+    )
+    parser.add_argument(
         "--format",
         dest="output_format",
-        choices=["json", "markdown", "json-schema"],
+        choices=["json", "markdown", "json-schema", "avro", "asyncapi", "dfsort-symbols"],
         default="json",
-        help="Output format (default: json).",
+        help="Output format (default: json). --diff supports json and markdown.",
     )
     parser.add_argument("--record", help="Only report the 01-level record with this name.")
     parser.add_argument(
@@ -1209,29 +1775,50 @@ def main(argv: list[str] | None = None) -> int:
         "--names",
         choices=["camel", "cobol"],
         default="camel",
-        help="Property names for --format json-schema (default: camel).",
+        help="Property names for json-schema, avro, and asyncapi (default: camel).",
     )
+    parser.add_argument(
+        "--diff", metavar="NEW", help="Compare the copybook (old) with this one (new)."
+    )
+    parser.add_argument(
+        "--match",
+        choices=["name", "position"],
+        default="name",
+        help="Pair fields by qualified name or by offset for --diff (default: name).",
+    )
+    parser.add_argument(
+        "--rdw", action="store_true", help="dfsort-symbols: add 4 to positions for the RDW."
+    )
+    parser.add_argument("--channel", help="asyncapi: channel address, such as an MQ queue name.")
     args = parser.parse_args(argv)
 
     try:
-        layout = parse_copybook(
-            args.copybook,
-            copylibs=args.copylib,
-            replacements=[(old, new) for old, new in args.replace],
-        )
+        layout = _load(args.copybook, args)
+        new_layout = _load(args.diff, args) if args.diff else None
     except OSError as exc:
         print(f"error: {exc}", file=sys.stderr)
-        return 1
-    if args.record:
-        layout.records = [r for r in layout.records if r.name == args.record.upper()]
-    if not layout.records:
+        return 2 if args.diff else 1
+    if not layout.records or (new_layout is not None and not new_layout.records):
         print("error: no matching data description entries found", file=sys.stderr)
-        return 1
+        return 2 if args.diff else 1
 
+    if new_layout is not None:
+        diff = diff_layouts(layout, new_layout, match=args.match)
+        if args.output_format == "markdown":
+            print(diff_to_markdown(diff))
+        else:
+            print(json.dumps(diff, indent=2))
+        return 1 if diff["breaking"] else 0
     if args.output_format == "markdown":
         print(layout_to_markdown(layout))
     elif args.output_format == "json-schema":
         print(json.dumps(layout_to_json_schema(layout, args.names), indent=2))
+    elif args.output_format == "avro":
+        print(json.dumps(layout_to_avro(layout, args.names), indent=2))
+    elif args.output_format == "asyncapi":
+        print(json.dumps(layout_to_asyncapi(layout, args.names, args.channel), indent=2))
+    elif args.output_format == "dfsort-symbols":
+        print(layout_to_dfsort_symbols(layout, rdw=args.rdw), end="")
     else:
         print(json.dumps(layout_to_dict(layout), indent=2))
     return 0

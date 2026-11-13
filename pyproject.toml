@@ -98,6 +98,9 @@ extra-paths = [
   "tests",
   "aha-feature/skills/aha-feature/scripts",
   "code-modernization-plugin/skills/mainframe-analysis/scripts",
+  "code-modernization-plugin/skills/copybook-data/scripts",
+  "code-modernization-plugin/skills/mainframe-batch-flow/scripts",
+  "code-modernization-plugin/skills/mainframe-program-docs/scripts",
 ]
 
 [tool.ty.src]
@@ -110,12 +113,25 @@ exclude = ["**/skills/*/scripts/"]
 [tool.inline-snapshot]
 format-command = "ruff format --stdin-filename {filename} -"
 
+[tool.typos.default]
+# Code-page override tables ("BBUUUU" hex tokens) in the vendored zos_encoding.py.
+extend-ignore-re = ["\\b[0-9A-F]{6}\\b"]
+
 [tool.typos.default.extend-words]
 # Mainframe vocabulary in code-modernization-plugin: the JCL PARM keyword, the .cpy
 # copybook extension, and the Language Environment CEE3ABD abend service.
 parm = "parm"
 cpy = "cpy"
 abd = "abd"
+# The BMS HILIGHT attribute, the JCL SPACE release subparameter RLSE, the DSN RUN keyword
+# PARMS, the ISPF system variable ZUSER, the IMS LCHILD POINTER=INDX keyword, and the EBCDIC
+# byte BA in a code-page table.
+hilight = "hilight"
+indx = "indx"
+rlse = "rlse"
+parms = "parms"
+zuser = "zuser"
+ba = "ba"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -141,6 +157,16 @@ source = [
   "aha-feature/skills/aha-feature/scripts",
   "codebase-diagrams/skills/codebase-diagrams/scripts",
   "code-modernization-plugin/skills/mainframe-analysis/scripts",
+  "code-modernization-plugin/skills/copybook-data/scripts",
+  "code-modernization-plugin/skills/mainframe-batch-flow/scripts",
+  "code-modernization-plugin/skills/mainframe-program-docs/scripts",
+]
+# Each mainframe skill bundles an identical copy of zos_encoding.py (a test keeps them in
+# sync); tests import and measure the mainframe-analysis copy, so the others are omitted.
+omit = [
+  "code-modernization-plugin/skills/copybook-data/scripts/zos_encoding.py",
+  "code-modernization-plugin/skills/mainframe-batch-flow/scripts/zos_encoding.py",
+  "code-modernization-plugin/skills/mainframe-program-docs/scripts/zos_encoding.py",
 ]
 branch = true
 # Measure scripts that tests run as subprocesses (render_diagrams.py).
