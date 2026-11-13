@@ -8,7 +8,7 @@ All notable changes to the repository tooling are documented here. The format fo
 
 ### Added
 
-- `code-modernization-plugin` with Gartner-aligned Refactor vs. Rearchitect triage, stack-neutral
+- `code-modernization-plugin` with Refactor vs. Rearchitect triage, stack-neutral
   4-stage gated playbooks, pluggable stack profiles (the first is the IBM Z `mainframe-analysis`
   skill), and Copilot/Cursor client extensions. `tests/test_mainframe_analysis.py` covers the
   inventory and copybook layout scripts and checks that every registered stack profile provides
@@ -38,6 +38,8 @@ All notable changes to the repository tooling are documented here. The format fo
 - `just new-plugin --no-server` is now `--no-mcp`; `just sync` runs a plain `uv sync`.
 - `AGENTS.md` §2.6 and the `README.md` client table now follow spec §8: extension namespaces
   belong to the client that defines them, and other clients ignore them.
+- `AGENTS.md` now notes that industry analyst research can inform a plugin's patterns and use
+  cases but is not a specification, so plugins describe those practices in their own words.
 
 ### Removed
 

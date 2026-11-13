@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "code-modernization-plugin",
   "version": "1.0.0",
-  "description": "Gartner-aligned Code Modernization playbooks (Refactor & Rearchitect) with elicitations, ADRs, and Strangler Fig gates, plus pluggable stack profiles starting with IBM Z mainframe (COBOL, PL/I, Assembler, JCL, CICS, IMS, Db2, VSAM), for Copilot and Cursor.",
+  "description": "Code Modernization playbooks (Refactor & Rearchitect) with elicitations, ADRs, and Strangler Fig gates, plus pluggable stack profiles starting with IBM Z mainframe (COBOL, PL/I, Assembler, JCL, CICS, IMS, Db2, VSAM), for Copilot and Cursor.",
   "author": {
     "name": "Mark B. Sigler",
     "url": "https://github.com/markbsigler"
@@ -16,7 +16,6 @@
     "rearchitecture",
     "strangler-fig",
     "adr",
-    "gartner",
     "playbooks",
     "mainframe",
     "cobol",

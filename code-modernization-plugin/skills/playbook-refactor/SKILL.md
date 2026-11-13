@@ -1,6 +1,6 @@
 ---
 name: playbook-refactor
-description: 4-stage governed runbook for behavior-preserving code-level modernization (Gartner Refactor), with approval gates, characterization tests, and equivalence evidence. Use after triage selects Refactor, or when the user asks for a framework, runtime, or compiler upgrade, tech-debt reduction, CVE remediation, or performance work that must not change external behavior or topology, on any stack, including Enterprise COBOL upgrades and other mainframe refactors.
+description: 4-stage governed runbook for behavior-preserving code-level modernization (the Refactor track), with approval gates, characterization tests, and equivalence evidence. Use after triage selects Refactor, or when the user asks for a framework, runtime, or compiler upgrade, tech-debt reduction, CVE remediation, or performance work that must not change external behavior or topology, on any stack, including Enterprise COBOL upgrades and other mainframe refactors.
 license: MIT
 metadata:
   author: markbsigler
@@ -9,7 +9,7 @@ metadata:
 
 # Playbook: Code-Level Refactoring (Behavior-Preserving)
 
-You are executing a **Gartner Refactor** initiative. You must improve code structure, framework versions, security, or performance **without altering external behavior or core architecture**.
+You are executing a **Refactor** initiative. You must improve code structure, framework versions, security, or performance **without altering external behavior or core architecture**.
 
 Begin every response with:
 `[REFACTOR PLAYBOOK: STAGE X/4] - Objective: [Current Step]`

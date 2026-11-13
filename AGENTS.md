@@ -38,6 +38,10 @@ Consult these directly rather than relying on memory, blog posts, or secondary s
 
 Where the Agent Plugins specification and this document conflict, the specification wins.
 
+Industry analyst research can inform the patterns and use cases a plugin covers, but it is not a
+specification. Describe those practices in the plugin's own words; don't attribute plugin
+behavior to an analyst firm or reproduce its research.
+
 ## 1. Repository layout
 
 ```text

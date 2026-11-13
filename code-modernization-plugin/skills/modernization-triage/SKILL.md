@@ -1,6 +1,6 @@
 ---
 name: modernization-triage
-description: Classifies modernization initiatives into Gartner Refactor vs. Rearchitect tracks via structured elicitation, loads the stack profile skills that match the scope, and routes to the playbook-refactor or playbook-rearchitect skill. Use before any code changes whenever a user asks to modernize, upgrade, clean up, decompose, migrate, or rearchitect a codebase, service, or application on any stack, including mainframe estates (COBOL, PL/I, CICS, IMS, Db2, VSAM, JCL).
+description: Classifies modernization initiatives into Refactor vs. Rearchitect tracks via structured elicitation, loads the stack profile skills that match the scope, and routes to the playbook-refactor or playbook-rearchitect skill. Use before any code changes whenever a user asks to modernize, upgrade, clean up, decompose, migrate, or rearchitect a codebase, service, or application on any stack, including mainframe estates (COBOL, PL/I, CICS, IMS, Db2, VSAM, JCL).
 license: MIT
 metadata:
   author: markbsigler
@@ -9,7 +9,7 @@ metadata:
 
 # Skill: Modernization Triage & Elicitation
 
-Before writing code, classify the user's request using Gartner's Code Modernization framework:
+Before writing code, classify the user's request into one of two code modernization tracks:
 1. **Refactor (Code-level modernization):** Restructure and optimize existing code—upgrading frameworks, paying down technical debt, and improving nonfunctional attributes (security, maintainability, performance)—without changing external behavior or core architecture.
 2. **Rearchitect (Structural code & architecture change):** Materially alter the code to shift to a new application architecture (e.g., monolith to modular/microservices or event-driven cloud-native) to unlock new capabilities.
 
@@ -49,7 +49,7 @@ Add each loaded profile's elicitation questions that its discovery could not ans
 
 Check each loaded profile's classification examples before deciding.
 
-Gartner describes seven modernization options: encapsulate, rehost, replatform, refactor, rearchitect, rebuild, and replace. This plugin governs **Refactor** and **Rearchitect**. When the request is really another option, say so plainly:
+Modernization initiatives are commonly grouped into seven options: encapsulate, rehost, replatform, refactor, rearchitect, rebuild, and replace. This plugin governs **Refactor** and **Rearchitect**. When the request is really another option, say so plainly:
 
 - **Encapsulate** (expose existing functions as APIs without changing them) is often the first step of Rearchitect Stage 2; route to Rearchitect if boundaries will move afterwards, otherwise treat it as a small, separate integration task.
 - **Rehost or replatform** (move workloads to another infrastructure or runtime with minimal code change) and **rebuild or replace** (rewrite or buy) are outside both playbooks. Recommend planning them separately, and offer the Refactor playbook for any code changes they require.

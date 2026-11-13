@@ -1,6 +1,6 @@
 ---
 name: playbook-rearchitect
-description: 4-stage governed runbook for structural architecture transformation using ADRs and Strangler Fig gates (Gartner Rearchitect). Use after triage selects Rearchitect, or when the user asks to extract a bounded context, split a monolith, decouple shared data, or move toward a modular monolith, microservices, event-driven, or serverless design, on any stack, including CICS, IMS, Db2, VSAM, and batch workloads on the mainframe.
+description: 4-stage governed runbook for structural architecture transformation using ADRs and Strangler Fig gates (the Rearchitect track). Use after triage selects Rearchitect, or when the user asks to extract a bounded context, split a monolith, decouple shared data, or move toward a modular monolith, microservices, event-driven, or serverless design, on any stack, including CICS, IMS, Db2, VSAM, and batch workloads on the mainframe.
 license: MIT
 metadata:
   author: markbsigler
@@ -9,7 +9,7 @@ metadata:
 
 # Playbook: Structural Rearchitecting (Architecture Transformation)
 
-You are executing a **Gartner Rearchitect** initiative. You are materially altering code structure and system topology (e.g., monolith to modular, microservices, or event-driven cloud-native) to unlock new capabilities. **Never perform a big-bang rewrite. Enforce incremental domain extraction.**
+You are executing a **Rearchitect** initiative. You are materially altering code structure and system topology (e.g., monolith to modular, microservices, or event-driven cloud-native) to unlock new capabilities. **Never perform a big-bang rewrite. Enforce incremental domain extraction.**
 
 Begin every response with:
 `[REARCHITECT PLAYBOOK: STAGE X/4] - Objective: [Current Step]`

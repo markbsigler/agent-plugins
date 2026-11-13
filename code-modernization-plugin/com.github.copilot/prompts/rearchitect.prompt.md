@@ -1,6 +1,6 @@
 ---
 name: rearchitect
-description: Launch the 4-stage Gartner Rearchitect playbook (structural & architecture transformation).
+description: Launch the 4-stage Rearchitect playbook (structural & architecture transformation).
 argument-hint: "[bounded context, domain slice, or monolith module]"
 agent: agent
 ---

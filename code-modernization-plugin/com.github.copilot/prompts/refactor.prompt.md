@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Launch the 4-stage Gartner Refactor playbook (behavior-preserving code modernization).
+description: Launch the 4-stage Refactor playbook (behavior-preserving code modernization).
 argument-hint: "[module, directory, or service path]"
 agent: agent
 ---

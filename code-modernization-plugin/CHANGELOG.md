@@ -7,9 +7,9 @@ All notable changes to `code-modernization-plugin` are documented here. The form
 ## [1.0.0]
 
 - Initial release of `code-modernization-plugin`:
-  - Shared discovery and Gartner classification skill (`modernization-triage`), which loads the
-    stack profiles that match the scope and flags Gartner's other options (encapsulate, rehost,
-    replatform, rebuild, replace).
+  - Shared discovery and classification skill (`modernization-triage`), which loads the stack
+    profiles that match the scope and flags the other modernization options (encapsulate,
+    rehost, replatform, rebuild, replace).
   - Track A 4-stage gated playbook (`playbook-refactor`) for behavior-preserving code transformations.
   - Track B 4-stage gated playbook (`playbook-rearchitect`) for structural and topology transformations using ADRs and Strangler Fig gates.
   - Stack-profile architecture: triage and both playbooks are stack-neutral. Every playbook stage

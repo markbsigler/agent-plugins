@@ -1,12 +1,12 @@
 # code-modernization-plugin
 
-An [Agent Plugin](https://agent-plugins.org/) that draws a strict line between **Refactor** (behavior-preserving code transformation) and **Rearchitect** (structural and topology transformation), routes every request through interactive discovery and Gartner-aligned triage, and runs each track as a 4-stage playbook with human approval gates. The triage and playbook skills are stack-neutral; stack-specific knowledge comes from pluggable [stack profiles](#stack-profiles). The first profile, `mainframe-analysis`, adds deep IBM Z support: COBOL, PL/I, Assembler, JCL, REXX, and Easytrieve with CICS, IMS, Db2 for z/OS, VSAM, IDMS, and MQ.
+An [Agent Plugin](https://agent-plugins.org/) that draws a strict line between **Refactor** (behavior-preserving code transformation) and **Rearchitect** (structural and topology transformation), routes every request through interactive discovery and triage, and runs each track as a 4-stage playbook with human approval gates. The triage and playbook skills are stack-neutral; stack-specific knowledge comes from pluggable [stack profiles](#stack-profiles). The first profile, `mainframe-analysis`, adds deep IBM Z support: COBOL, PL/I, Assembler, JCL, REXX, and Easytrieve with CICS, IMS, Db2 for z/OS, VSAM, IDMS, and MQ.
 
 ```text
 code-modernization-plugin/
 ├── plugin.json                                      # Portable manifest (Agent Plugins 1.0.0)
 ├── skills/                                          # Portable core logic & playbooks
-│   ├── modernization-triage/                        # Shared discovery, Gartner classification, stack profile registry
+│   ├── modernization-triage/                        # Shared discovery, track classification, stack profile registry
 │   ├── playbook-refactor/                           # Track A: Behavior-preserving code transformation
 │   ├── playbook-rearchitect/                        # Track B: Structural & topology transformation
 │   └── mainframe-analysis/                          # Stack profile: IBM Z (z/OS)
@@ -39,7 +39,7 @@ code-modernization-plugin/
 
 | Skill | Role |
 | --- | --- |
-| [`modernization-triage`](./skills/modernization-triage/SKILL.md) | Detects the estate, loads matching stack profiles, runs the elicitation protocol, classifies Refactor vs. Rearchitect (and flags Gartner's other options: encapsulate, rehost, replatform, rebuild, replace), and hands off with a Triage Brief |
+| [`modernization-triage`](./skills/modernization-triage/SKILL.md) | Detects the estate, loads matching stack profiles, runs the elicitation protocol, classifies Refactor vs. Rearchitect (and flags the other modernization options: encapsulate, rehost, replatform, rebuild, replace), and hands off with a Triage Brief |
 | [`playbook-refactor`](./skills/playbook-refactor/SKILL.md) | Track A: audit, characterization and NFR baseline, incremental transformation, equivalence verification |
 | [`playbook-rearchitect`](./skills/playbook-rearchitect/SKILL.md) | Track B: seam analysis and ADR, contracts and anti-corruption layer, strangler slice and dual run, parity, cutover, and decommissioning |
 | [`mainframe-analysis`](./skills/mainframe-analysis/SKILL.md) | Stack profile for IBM Z: inventory, dependency graph, copybook layouts, Mainframe Estate Brief, and the z/OS tasks for every playbook stage |

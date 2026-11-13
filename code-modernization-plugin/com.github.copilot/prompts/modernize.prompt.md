@@ -1,6 +1,6 @@
 ---
 name: modernize
-description: Triage a modernization goal (Gartner Refactor vs. Rearchitect) and launch the governed playbook.
+description: Triage a modernization goal (Refactor vs. Rearchitect) and launch the governed playbook.
 argument-hint: "[module, service, or mainframe application to modernize]"
 agent: agent
 ---
