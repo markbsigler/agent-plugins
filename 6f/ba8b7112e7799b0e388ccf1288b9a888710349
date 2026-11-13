@@ -1,0 +1,21 @@
+CHANGELOG.md
+  s_81ba71af1e421b::t_1b067399b43915 48-49
+.gitignore
+  s_81ba71af1e421b::t_e5b6980736f746 32-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6fba8b7112e7799b0e388ccf1288b9a888710349",
+  "prompts": {},
+  "sessions": {
+    "s_81ba71af1e421b": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "bd902827-5cdc-4fc8-aabc-164b8f73efc5",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
