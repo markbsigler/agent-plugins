@@ -30,9 +30,9 @@ from discovery import (
     load_json,
 )
 
-# Placeholder values inherited from the example-plugin template. A real plugin must
-# replace these, so we fail loudly rather than publishing "Your Name".
-TEMPLATE_PLACEHOLDERS = ("Your Name", "your-org", "example.com")
+# Placeholder values inherited from the example-plugin template or new_plugin.py.
+# A real plugin must replace these, so we fail loudly rather than publishing "Your Name" or "TODO".
+TEMPLATE_PLACEHOLDERS = ("Your Name", "your-org", "example.com", "TODO")
 
 
 def _validator(schema_name: str) -> jsonschema.protocols.Validator:
@@ -292,3 +292,37 @@ def test_plugin_top_level_contains_only_spec_defined_entries(plugin_dir: Path) -
         f"{plugin_dir.name}: top-level entries outside the Agent Plugins spec: {unexpected}. "
         "Keep server source and other non-package files outside the plugin directory."
     )
+
+
+def _iter_strings(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [item for element in value for item in _iter_strings(element)]
+    if isinstance(value, dict):
+        return [item for element in value.values() for item in _iter_strings(element)]
+    return []
+
+
+def test_plugin_extension_paths_stay_inside_the_plugin_root(plugin_dir: Path) -> None:
+    """Spec §4.1 & §8: plugin-relative paths in `extensions` must stay inside the plugin root."""
+    manifest = load_json(plugin_dir / "plugin.json")
+    extensions = manifest.get("extensions")
+    if not extensions:
+        pytest.skip("plugin declares no manifest extensions")
+
+    for namespace, payload in extensions.items():
+        assert EXTENSION_NAMESPACE.match(namespace), (
+            f"{plugin_dir.name}: invalid extension namespace {namespace!r}"
+        )
+        for text in _iter_strings(payload):
+            assert not text.startswith("../"), (
+                f"{plugin_dir.name}: extension path {text!r} in {namespace!r} must not use '../'"
+            )
+            if text.startswith("./"):
+                assert _resolves_inside(plugin_dir, text), (
+                    f"{plugin_dir.name}: extension path {text!r} escapes the plugin root"
+                )
+                assert (plugin_dir / text).exists(), (
+                    f"{plugin_dir.name}: extension path {text!r} does not exist"
+                )

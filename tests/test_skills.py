@@ -202,3 +202,20 @@ def test_referenced_scripts_exist(skill_dir: Path) -> None:
     referenced = set(re.findall(r"\./(scripts/[\w./-]+)", text))
     missing = sorted(ref for ref in referenced if not (skill_dir / ref).exists())
     assert not missing, f"{skill_dir.name}: SKILL.md references missing files: {missing}"
+
+
+def test_skill_md_relative_links_stay_inside_skill_root(skill_dir: Path) -> None:
+    """Agent Skills spec: file references in SKILL.md are relative to the skill root."""
+    text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    targets = re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+    escaping = [
+        target
+        for target in targets
+        if not target.startswith(("http://", "https://", "mailto:", "#"))
+        and not (skill_dir / target.split("#", maxsplit=1)[0])
+        .resolve()
+        .is_relative_to(skill_dir.resolve())
+    ]
+    assert not escaping, (
+        f"{skill_dir.name}: SKILL.md contains links escaping the skill root: {escaping}"
+    )

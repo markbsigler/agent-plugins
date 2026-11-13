@@ -91,9 +91,14 @@ convention = "google"
 [tool.ty.environment]
 python-version = "3.12"
 # `scripts/` is not a package; tests add it to sys.path at runtime, and
-# pytest adds `tests/` via `pythonpath`; conftest.py adds the aha-feature scripts.
-# Tell ty about all three.
-extra-paths = ["scripts", "tests", "aha-feature/skills/aha-feature/scripts"]
+# pytest adds `tests/` via `pythonpath`; conftest.py adds the skill script directories.
+# Tell ty about all of them.
+extra-paths = [
+  "scripts",
+  "tests",
+  "aha-feature/skills/aha-feature/scripts",
+  "code-modernization-plugin/skills/mainframe-analysis/scripts",
+]
 
 [tool.ty.src]
 # PEP 723 single-file scripts (skills/*/scripts/) declare their own
@@ -104,6 +109,13 @@ exclude = ["**/skills/*/scripts/"]
 
 [tool.inline-snapshot]
 format-command = "ruff format --stdin-filename {filename} -"
+
+[tool.typos.default.extend-words]
+# Mainframe vocabulary in code-modernization-plugin: the JCL PARM keyword, the .cpy
+# copybook extension, and the Language Environment CEE3ABD abend service.
+parm = "parm"
+cpy = "cpy"
+abd = "abd"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -128,6 +140,7 @@ source = [
   "scripts",
   "aha-feature/skills/aha-feature/scripts",
   "codebase-diagrams/skills/codebase-diagrams/scripts",
+  "code-modernization-plugin/skills/mainframe-analysis/scripts",
 ]
 branch = true
 # Measure scripts that tests run as subprocesses (render_diagrams.py).

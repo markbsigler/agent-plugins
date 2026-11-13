@@ -15,6 +15,7 @@ Read this file before adding or modifying a plugin. For the contributor walkthro
 | Plugin | Contents |
 | --- | --- |
 | [`aha-feature`](./aha-feature) | Aha! feature/epic/requirement skill; `mcp.json` for the Aha! remote MCP server |
+| [`code-modernization-plugin`](./code-modernization-plugin) | Stack-neutral Refactor vs. Rearchitect triage and 4-stage playbooks, pluggable stack profiles (first: IBM Z mainframe skill and scripts), Copilot/Cursor extensions |
 | [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders Mermaid architecture diagrams |
 | [`example-plugin`](./example-plugin) | Template for new plugins; **not** listed in the marketplace |
 
@@ -182,9 +183,18 @@ client-managed. Do not invent one.
 
 ### 2.6 Client extensions
 
-Only add data under `extensions.<namespace>` or a top-level `<namespace>/` directory for a
-reverse-domain namespace you own and document (for example `com.example.client/`). Don't
-invent hooks, agents, or commands at the portable top level.
+Client-specific data goes only under `extensions.<namespace>` in `plugin.json` or in a
+top-level `<namespace>/` directory (spec §8). The namespace is the reverse-domain identifier
+of the **client** that defines it (for example `com.example.client`); that client owns the
+namespace and defines its contents, and every other client ignores it. So:
+
+- Never put behavior a plugin depends on in an extension; the portable skills and `mcp.json`
+  must work alone.
+- Paths inside extension data are client-defined, but write them plugin-relative with a
+  leading `./` so they stay inside the plugin root (tested).
+- Document in the plugin README which client reads each namespace and how to install the
+  files manually when a client does not load them.
+- Don't invent hooks, agents, or commands at the portable top level.
 
 ## 3. Skills
 
@@ -263,6 +273,9 @@ just test-fast     # skip tests marked `slow`
   `uv run python scripts/x.py` per scenario: a subprocess can't be measured in-process and
   lets slow system dependencies creep in. Keep at most one real subprocess smoke test per
   script to prove the CLI wiring (see `test_new_plugin_cli_works_as_documented`).
+- Skill scripts that tests import directly (as the `aha-feature` and `mainframe-analysis`
+  scripts are) need their directory in three places: `sys.path` in `tests/conftest.py`,
+  `[tool.ty.environment].extra-paths`, and `[tool.coverage.run].source`.
 
 ### 4.5 Code quality
 
@@ -293,7 +306,7 @@ Everything runs through `just`; prefer recipes over retyping commands, and updat
 
 `ty` skips PEP 723 scripts (`[tool.ty.src].exclude`) because their dependencies live in
 `uv`'s per-script cache, and it needs `extra-paths` for `scripts/`, `tests/`, and the
-`aha-feature` scripts. Type-check a skill script with
+`aha-feature` and `mainframe-analysis` scripts. Type-check a skill script with
 `uv run --with ty --with <deps> ty check <path>`.
 
 For `trivy`: fix real findings rather than suppressing them. If a finding is a reviewed false

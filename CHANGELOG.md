@@ -8,6 +8,14 @@ All notable changes to the repository tooling are documented here. The format fo
 
 ### Added
 
+- `code-modernization-plugin` with Gartner-aligned Refactor vs. Rearchitect triage, stack-neutral
+  4-stage gated playbooks, pluggable stack profiles (the first is the IBM Z `mainframe-analysis`
+  skill), and Copilot/Cursor client extensions. `tests/test_mainframe_analysis.py` covers the
+  inventory and copybook layout scripts and checks that every registered stack profile provides
+  each stage section the playbooks call.
+- Spec-conformance tests that extension namespaces are reverse-domain identifiers and that
+  `./` paths in `extensions` stay inside the plugin root, that `SKILL.md` links stay inside
+  the skill, and that manifests contain no `TODO` placeholders.
 - Plugin marketplace catalog at `.github/plugin/marketplace.json`, so a single plugin can be
   installed from the repo, with tests that keep it in sync with each `plugin.json`.
 - `aha-feature` and `codebase-diagrams` plugins, migrated from
@@ -28,6 +36,8 @@ All notable changes to the repository tooling are documented here. The format fo
 - Removed the GitHub Actions CI workflow; checks run locally via `just check` and
   pre-commit.
 - `just new-plugin --no-server` is now `--no-mcp`; `just sync` runs a plain `uv sync`.
+- `AGENTS.md` §2.6 and the `README.md` client table now follow spec §8: extension namespaces
+  belong to the client that defines them, and other clients ignore them.
 
 ### Removed
 

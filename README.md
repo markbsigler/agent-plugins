@@ -21,6 +21,7 @@ is built to the [Agent Plugins Specification v1.0.0](https://agent-plugins.org/s
 | Plugin | Contents | MCP |
 | --- | --- | --- |
 | [`aha-feature`](./aha-feature) | Skill that elicits, elaborates, and verifies Aha! features, epics, and requirements as spec-driven records | Aha! (remote, OAuth) — set your subdomain in [`mcp.json`](./aha-feature/mcp.json) |
+| [`code-modernization-plugin`](./code-modernization-plugin) | Governed code modernization separating Refactor from Rearchitect, with triage, elicitations, stack-neutral 4-stage playbooks, pluggable stack profiles (first: IBM Z mainframe for COBOL, CICS, IMS, Db2, VSAM, JCL), and Copilot/Cursor extensions | none |
 | [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders color-coded Mermaid architecture diagrams | none |
 | [`example-plugin`](./example-plugin) | Reference pattern for new plugins | placeholder remote server |
 
@@ -45,13 +46,15 @@ it once and install any single plugin from it:
 Each plugin's README lists its requirements and any setup, such as pointing `aha-feature`
 at your Aha! account.
 
-A client reads three things from a plugin and ignores everything else:
+A client reads three portable things from a plugin and ignores everything else, except
+extension namespaces it implements itself:
 
 | Path | What the client does with it |
 | --- | --- |
 | `plugin.json` | Identity and metadata — required |
 | `skills/*/SKILL.md` | Loads each skill so the agent can invoke it |
 | `mcp.json` | Connects to the MCP servers listed there |
+| `<namespace>/`, `extensions.<namespace>` | Read only by the client that owns that reverse-domain namespace (for example `com.example.client`); other clients ignore them |
 
 ## Layout
 

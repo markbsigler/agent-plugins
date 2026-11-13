@@ -16,8 +16,12 @@ from discovery import REPO_ROOT, discover_plugins, discover_skills
 
 # The aha-feature scripts import each other as top-level modules, as they do when run directly.
 _AHA_FEATURE_SCRIPTS = REPO_ROOT / "aha-feature" / "skills" / "aha-feature" / "scripts"
-if str(_AHA_FEATURE_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_AHA_FEATURE_SCRIPTS))
+_MAINFRAME_SCRIPTS = (
+    REPO_ROOT / "code-modernization-plugin" / "skills" / "mainframe-analysis" / "scripts"
+)
+for _scripts in (_AHA_FEATURE_SCRIPTS, _MAINFRAME_SCRIPTS):
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
 
 
 def _ids(paths: list[Path]) -> list[str]:

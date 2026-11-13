@@ -1,0 +1,9 @@
+---
+description: Trigger when the user asks to modernize, refactor, rearchitect, decompose a monolith, or upgrade legacy frameworks, including mainframe COBOL, CICS, IMS, Db2, and batch applications.
+alwaysApply: false
+---
+
+When a user initiates a modernization task:
+1. Run the **modernization-triage** skill to classify the request as either a **Gartner Refactor** (behavior-preserving) or **Gartner Rearchitect** (structural/topology shift). Load every stack profile skill that matches the scope (for example **mainframe-analysis** for mainframe code and data) and run its discovery first.
+2. Ask the required track-specific elicitation questions if scope, target version, or target architecture pattern is missing.
+3. Execute either **playbook-refactor** or **playbook-rearchitect** strictly stage by stage, completing each loaded stack profile's tasks for the stage and pausing at every Human-in-the-Loop Gate.

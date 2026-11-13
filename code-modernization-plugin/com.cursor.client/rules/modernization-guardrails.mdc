@@ -1,0 +1,9 @@
+---
+description: Core safety guardrails for code modernization initiatives.
+alwaysApply: true
+---
+
+- Separate behavior-preserving refactoring from structural rearchitecting.
+- Require baseline characterization tests before modifying legacy logic.
+- Require an approved Architecture Decision Record (ADR) and explicit interface contracts before extracting services or splitting shared databases.
+- Follow the safety rules of every stack profile in scope. For example, mainframe records are converted field by field from copybook layouts, never as whole-record text, and packed or zoned decimals never pass through floating point.

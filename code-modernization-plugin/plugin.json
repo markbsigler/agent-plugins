@@ -1,0 +1,49 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "code-modernization-plugin",
+  "version": "1.0.0",
+  "description": "Gartner-aligned Code Modernization playbooks (Refactor & Rearchitect) with elicitations, ADRs, and Strangler Fig gates, plus pluggable stack profiles starting with IBM Z mainframe (COBOL, PL/I, Assembler, JCL, CICS, IMS, Db2, VSAM), for Copilot and Cursor.",
+  "author": {
+    "name": "Mark B. Sigler",
+    "url": "https://github.com/markbsigler"
+  },
+  "homepage": "https://github.com/markbsigler/agent-plugins/tree/main/code-modernization-plugin",
+  "repository": "https://github.com/markbsigler/agent-plugins",
+  "license": "MIT",
+  "keywords": [
+    "modernization",
+    "refactoring",
+    "rearchitecture",
+    "strangler-fig",
+    "adr",
+    "gartner",
+    "playbooks",
+    "mainframe",
+    "cobol",
+    "zos",
+    "cics",
+    "db2",
+    "ims",
+    "jcl"
+  ],
+  "extensions": {
+    "com.github.copilot": {
+      "prompts": [
+        "./com.github.copilot/prompts/modernize.prompt.md",
+        "./com.github.copilot/prompts/refactor.prompt.md",
+        "./com.github.copilot/prompts/rearchitect.prompt.md"
+      ],
+      "instructions": [
+        "./com.github.copilot/instructions/modernization-guardrails.instructions.md",
+        "./com.github.copilot/instructions/mainframe-sources.instructions.md"
+      ]
+    },
+    "com.cursor.client": {
+      "rules": [
+        "./com.cursor.client/rules/modernization-triage.mdc",
+        "./com.cursor.client/rules/modernization-guardrails.mdc",
+        "./com.cursor.client/rules/mainframe-sources.mdc"
+      ]
+    }
+  }
+}
