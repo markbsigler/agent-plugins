@@ -1,0 +1,43 @@
+code-modernization-plugin/skills/playbook-rearchitect/SKILL.md
+  s_81ba71af1e421b::t_8798803075d6a6 3,12
+code-modernization-plugin/plugin.json
+  s_81ba71af1e421b::t_b2a279dd3f697e 5
+AGENTS.md
+  s_81ba71af1e421b::t_ebc5f83f49ff28 41-44
+code-modernization-plugin/com.github.copilot/prompts/refactor.prompt.md
+  s_81ba71af1e421b::t_1d737c9019331a 3
+code-modernization-plugin/skills/playbook-refactor/SKILL.md
+  s_81ba71af1e421b::t_1b7c45b68a51c3 3,12
+code-modernization-plugin/com.github.copilot/prompts/rearchitect.prompt.md
+  s_81ba71af1e421b::t_a0cbfd8434aedb 3
+code-modernization-plugin/skills/modernization-triage/SKILL.md
+  s_81ba71af1e421b::t_4da588d4e83eed 3,12,52
+code-modernization-plugin/com.github.copilot/prompts/modernize.prompt.md
+  s_81ba71af1e421b::t_67f925481beb69 3
+code-modernization-plugin/CHANGELOG.md
+  s_81ba71af1e421b::t_886cf10ab713b6 10-12
+.github/plugin/marketplace.json
+  s_81ba71af1e421b::t_e3c835a1e86b73 19
+code-modernization-plugin/README.md
+  s_81ba71af1e421b::t_697deecdc9efa4 3,9,42
+code-modernization-plugin/com.cursor.client/rules/modernization-triage.mdc
+  s_81ba71af1e421b::t_025a2d87d25d96 7
+CHANGELOG.md
+  s_81ba71af1e421b::t_ab695a9185d65a 11,41-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ea32a0e52bf418b41a6c6a1ca1c2558a8687c3f2",
+  "prompts": {},
+  "sessions": {
+    "s_81ba71af1e421b": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "bd902827-5cdc-4fc8-aabc-164b8f73efc5",
+        "model": "claude-opus-5.5"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
