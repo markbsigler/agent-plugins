@@ -1,0 +1,96 @@
+pyproject.toml
+  s_81ba71af1e421b::t_2dfe8c1ae0c507 104-106,166-168
+CHANGELOG.md
+  s_81ba71af1e421b::t_8239a9ccb97ef2 11-20
+tests/test_dotnet_analysis.py
+  s_81ba71af1e421b::t_0034cdde002853 1-122
+AGENTS.md
+  s_81ba71af1e421b::t_0a43450b3f91f7 18,281,326-328
+code-modernization-plugin/com.github.copilot/agents/modernize-refactor.agent.md
+  s_81ba71af1e421b::t_b4deda5ae26cc6 1-15
+code-modernization-plugin/skills/modernization-triage/SKILL.md
+  s_81ba71af1e421b::t_e25ab6873f0f4a 3,25-26,28-41,45,49,54,75,80-82,89
+code-modernization-plugin/skills/behavioral-baseline/SKILL.md
+  s_81ba71af1e421b::t_764184bbde1261 1-66
+.github/plugin/marketplace.json
+  s_81ba71af1e421b::t_c1ab00b83b8b3c 19
+code-modernization-plugin/README.md
+  s_81ba71af1e421b::t_61b452c06c0828 3,9,12,25-26,31-34,56-57,59,61-62,156,160,164
+code-modernization-plugin/skills/behavioral-baseline/scripts/baseline_gate.py
+  s_81ba71af1e421b::t_62c99886810152 1-38,43-142,144-337,341-343,349-360,362-363,365-470
+  s_81ba71af1e421b::t_78320230cd783e 39-42
+  s_81ba71af1e421b::t_e7cd662352eb81 344-348,361,364
+  s_81ba71af1e421b::t_f89f762545ddc4 143,338-340
+code-modernization-plugin/com.github.copilot/prompts/modernize.prompt.md
+  s_81ba71af1e421b::t_2ee0296b1ba887 13,15
+code-modernization-plugin/com.cursor.client/rules/modernization-triage.mdc
+  s_81ba71af1e421b::t_6ce897096c9ef5 2,7-9
+code-modernization-plugin/skills/playbook-rearchitect/SKILL.md
+  s_81ba71af1e421b::t_182ca153c19d5a 17-23,30,39,43-44,50,63,69-70,80,82,96
+code-modernization-plugin/skills/dotnet-analysis/SKILL.md
+  s_81ba71af1e421b::t_c2caa2e9c4ef4a 1-86
+code-modernization-plugin/com.github.copilot/agents/modernize-rearchitect.agent.md
+  s_81ba71af1e421b::t_3d458cd7b3b2e3 1-15
+code-modernization-plugin/com.github.copilot/prompts/rearchitect.prompt.md
+  s_81ba71af1e421b::t_8920db3ce224a5 13
+code-modernization-plugin/skills/java-analysis/scripts/java_inventory.py
+  s_81ba71af1e421b::t_01c8b3dfaef903 79-81
+  s_81ba71af1e421b::t_9dcf4a7de29f6e 1-51,53-78,82-224,226-257,262-329,336-368
+  s_81ba71af1e421b::t_05fb620933cb3d 52,225,258-261,330-335
+code-modernization-plugin/skills/java-analysis/SKILL.md
+  s_81ba71af1e421b::t_4f0533a2fb7aff 1-86
+code-modernization-plugin/CHANGELOG.md
+  s_81ba71af1e421b::t_e06e06afc69f3b 54-65
+tests/test_behavioral_baseline.py
+  s_81ba71af1e421b::t_b7cd35ed8c6763 1-226,228-236,240-246
+  s_81ba71af1e421b::t_02a1cfe08715f8 237-239
+  s_81ba71af1e421b::t_b5e1f197b3baab 227
+code-modernization-plugin/skills/dotnet-analysis/references/upgrade-and-migration.md
+  s_81ba71af1e421b::t_d6437b2765133d 1-36
+tests/test_java_analysis.py
+  s_81ba71af1e421b::t_128d1bdb871316 45-47
+  s_81ba71af1e421b::t_02a1cfe08715f8 60-62,77
+  s_81ba71af1e421b::t_32b9080a333f59 1-44,48-59,63-76,78-133
+code-modernization-plugin/skills/dotnet-analysis/references/playbook-stages.md
+  s_81ba71af1e421b::t_8751157116e949 1-61
+code-modernization-plugin/skills/dotnet-analysis/scripts/dotnet_inventory.py
+  s_81ba71af1e421b::t_8f48e5c4757516 247,254
+  s_81ba71af1e421b::t_dfe69e28f5165c 108-110,193
+  s_81ba71af1e421b::t_4b69f82c2ac83f 1-107,111-192,194-246,248-253,255-305
+code-modernization-plugin/com.github.copilot/prompts/refactor.prompt.md
+  s_81ba71af1e421b::t_a5f0b2d1be7138 13
+code-modernization-plugin/skills/behavioral-baseline/references/gate-checklists.md
+  s_81ba71af1e421b::t_848f6364de1d32 1-98
+code-modernization-plugin/com.github.copilot/agents/modernize.agent.md
+  s_81ba71af1e421b::t_25c07bc5d5a2cd 1-22
+code-modernization-plugin/com.cursor.client/rules/modernization-guardrails.mdc
+  s_81ba71af1e421b::t_3c9e58bb10a9e2 6,8,10
+code-modernization-plugin/skills/java-analysis/references/playbook-stages.md
+  s_81ba71af1e421b::t_5fe443bcabbc48 1-63
+tests/conftest.py
+  s_81ba71af1e421b::t_b0dc914a854a45 28-30
+code-modernization-plugin/skills/playbook-refactor/SKILL.md
+  s_81ba71af1e421b::t_1d8f825bdcb496 19-26,35,45-46,52,62-63,69,79,81,93-95
+code-modernization-plugin/skills/java-analysis/references/upgrade-and-migration.md
+  s_81ba71af1e421b::t_6b86b26b8f5442 1-37
+code-modernization-plugin/com.github.copilot/instructions/modernization-guardrails.instructions.md
+  s_81ba71af1e421b::t_3f3cfeed6c7c0c 7,9,12
+code-modernization-plugin/plugin.json
+  s_81ba71af1e421b::t_97915c60845739 5,32-35,39-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cc0f7028024a9d50b405c517827352cf0e02ebb2",
+  "prompts": {},
+  "sessions": {
+    "s_81ba71af1e421b": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "bd902827-5cdc-4fc8-aabc-164b8f73efc5",
+        "model": "unknown"
+      },
+      "human_author": "Mark B. Sigler <markbsigler@gmail.com>"
+    }
+  }
+}
