@@ -1,9 +1,9 @@
 ---
-description: Trigger when the user asks to modernize, refactor, rearchitect, decompose a monolith, or upgrade legacy frameworks, including mainframe COBOL, CICS, IMS, Db2, and batch applications.
+description: Trigger when the user asks to modernize, refactor, rearchitect, decompose a monolith, or upgrade legacy frameworks across IBM Z mainframe, Java, .NET, or polyglot estates.
 alwaysApply: false
 ---
 
 When a user initiates a modernization task:
-1. Run the **modernization-triage** skill to classify the request as either **Refactor** (behavior-preserving) or **Rearchitect** (structural/topology shift). Load every stack profile skill that matches the scope (for example **mainframe-analysis** for mainframe code and data) and run its discovery first.
-2. Ask the required track-specific elicitation questions if scope, target version, or target architecture pattern is missing.
-3. Execute either **playbook-refactor** or **playbook-rearchitect** strictly stage by stage, completing each loaded stack profile's tasks for the stage and pausing at every Human-in-the-Loop Gate.
+1. Run the **modernization-triage** skill to check `.modernize/rulebook/` policies, classify the request as either **Refactor** (behavior-preserving) or **Rearchitect** (structural/topology shift), load every matching stack profile skill (`mainframe-analysis`, `java-analysis`, `dotnet-analysis`), and run its discovery first.
+2. Ask the required track-specific elicitation questions if scope, target version, or target architecture pattern is not already answered by the prompt or rulebook, and persist `.modernize/triage-brief.md`.
+3. Execute either **playbook-refactor** or **playbook-rearchitect** strictly stage by stage, completing each loaded stack profile's tasks, freezing and verifying `TC-XXX` baselines with **behavioral-baseline**, and pausing at every Human-in-the-Loop Gate.

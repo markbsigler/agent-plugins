@@ -3,7 +3,8 @@ description: Core safety guardrails for code modernization initiatives.
 alwaysApply: true
 ---
 
+- Honor enterprise modernization policies in `.modernize/rulebook/*.md` and `.github/modernize/rulebook/*.md`; rulebook constraints override default recommendations.
 - Separate behavior-preserving refactoring from structural rearchitecting.
-- Require baseline characterization tests before modifying legacy logic.
+- Require frozen baseline characterization specs (`.modernize/baseline/test-cases.md` and `manifest.json`) before modifying legacy logic, and never weaken frozen test cases during implementation.
 - Require an approved Architecture Decision Record (ADR) and explicit interface contracts before extracting services or splitting shared databases.
-- Follow the safety rules of every stack profile in scope. For example, mainframe records are converted field by field from copybook layouts, never as whole-record text, and packed or zoned decimals never pass through floating point.
+- Follow the safety rules of every stack profile in scope (`mainframe-analysis`, `java-analysis`, `dotnet-analysis`). For example, mainframe records are converted field by field from copybook layouts, never as whole-record text, and packed or zoned decimals never pass through floating point (`BigDecimal` in Java, `decimal` in .NET).

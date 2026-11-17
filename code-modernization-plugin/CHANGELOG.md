@@ -51,6 +51,16 @@ All notable changes to `code-modernization-plugin` are documented here. The form
   - `mainframe-program-docs` skill: COBOL documentation skeletons (paragraph flow, unreachable
     paragraphs, interfaces, business-rule candidates) and BMS and MFS screen maps with mockups,
     screen contracts, and symbolic-map checks.
-  - GitHub Copilot prompt slash commands (`/modernize`, `/refactor`, `/rearchitect`), guardrail
-    instructions, and mainframe source-editing instructions under `com.github.copilot/`.
+  - `behavioral-baseline` skill (`baseline_gate.py`): loads `.modernize/rulebook/` enterprise
+    policies and `.modernize/learnings/` stage insights, freezes `.modernize/baseline/test-cases.md`,
+    `infra-decision-table.md`, and `testdata/` with SHA-256 digests (`manifest.json`), verifies
+    1:1 `TC-XXX` test coverage in the test suite, and runs `spec-quality`, `spec-to-plan`,
+    `plan-to-tasks`, and `completeness` traceability gates over `.modernize/traceability.json`.
+  - `java-analysis` stack profile (`java_inventory.py`) and `dotnet-analysis` stack profile
+    (`dotnet_inventory.py`) for Java/Spring Boot/Jakarta EE/WebSphere/Struts and .NET Framework
+    to modern .NET modernization, as well as target-stack guidance for mainframe-to-Java and
+    mainframe-to-.NET migrations.
+  - GitHub Copilot custom agents (`modernize`, `modernize-refactor`, `modernize-rearchitect`),
+    prompt slash commands (`/modernize`, `/refactor`, `/rearchitect`), guardrail instructions,
+    and mainframe source-editing instructions under `com.github.copilot/`.
   - Cursor routing, safety guardrail, and auto-attached mainframe source rules under `com.cursor.client/`.

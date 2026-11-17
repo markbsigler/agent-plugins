@@ -10,6 +10,6 @@ Execute the **modernization-triage** skill using these user inputs:
 - **Modernization Goal:** `${input:goal:Describe the desired outcome (e.g., upgrade Spring Boot 2 to 3, or extract Orders into an event-driven service)}`
 - **Architecture Change Required?:** `${input:archChange:Does this change deployment topology or database ownership? (yes/no)}`
 
-Triage loads the stack profile skills that match the scope (for example **mainframe-analysis** for COBOL, PL/I, copybooks, JCL, CICS, IMS, Db2 for z/OS, and VSAM) and runs their discovery before classifying.
+Triage loads any enterprise rulebook in `.modernize/rulebook/` (or `.github/modernize/rulebook/`), loads the stack profile skills that match the scope (`mainframe-analysis`, `java-analysis`, `dotnet-analysis`), and runs their discovery before classifying.
 
-Classify the request, confirm any missing track-specific details, and immediately start Stage 1 of the matching playbook (`playbook-refactor` or `playbook-rearchitect`).
+Classify the request, confirm any missing track-specific details, persist `.modernize/triage-brief.md`, and immediately start Stage 1 of the matching playbook (`playbook-refactor` or `playbook-rearchitect`).

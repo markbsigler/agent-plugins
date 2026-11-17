@@ -15,7 +15,7 @@ Read this file before adding or modifying a plugin. For the contributor walkthro
 | Plugin | Contents |
 | --- | --- |
 | [`aha-feature`](./aha-feature) | Aha! feature/epic/requirement skill; `mcp.json` for the Aha! remote MCP server |
-| [`code-modernization-plugin`](./code-modernization-plugin) | Stack-neutral Refactor vs. Rearchitect triage and 4-stage playbooks, pluggable stack profiles (first: IBM Z mainframe skill and scripts), mainframe tool skills (copybook data, batch flow, program docs), Copilot/Cursor extensions |
+| [`code-modernization-plugin`](./code-modernization-plugin) | Stack-neutral Refactor vs. Rearchitect triage, enterprise rulebooks, and 4-stage playbooks, pluggable stack profiles (IBM Z mainframe, Java, .NET), tool skills (`behavioral-baseline`, `copybook-data`, `mainframe-batch-flow`, `mainframe-program-docs`), Copilot/Cursor extensions |
 | [`codebase-diagrams`](./codebase-diagrams) | Skill that writes and renders Mermaid architecture diagrams |
 | [`example-plugin`](./example-plugin) | Template for new plugins; **not** listed in the marketplace |
 
@@ -278,7 +278,7 @@ just test-fast     # skip tests marked `slow`
   lets slow system dependencies creep in. Keep at most one real subprocess smoke test per
   script to prove the CLI wiring (see `test_new_plugin_cli_works_as_documented`).
 - Skill scripts that tests import directly (as the `aha-feature` scripts and the scripts of
-  the four `code-modernization-plugin` mainframe skills are) need their directory in three
+  the seven `code-modernization-plugin` script-bearing skills are) need their directory in three
   places: `sys.path` in `tests/conftest.py`, `[tool.ty.environment].extra-paths`, and
   `[tool.coverage.run].source`. Every directory on `sys.path` shares one module namespace, so
   script file names must be unique across those skills.
@@ -323,8 +323,9 @@ Everything runs through `just`; prefer recipes over retyping commands, and updat
 
 `ty` skips PEP 723 scripts (`[tool.ty.src].exclude`) because their dependencies live in
 `uv`'s per-script cache, and it needs `extra-paths` for `scripts/`, `tests/`, and the
-`aha-feature`, `mainframe-analysis`, `copybook-data`, `mainframe-batch-flow`, and
-`mainframe-program-docs` scripts. Type-check a skill script with
+`aha-feature`, `mainframe-analysis`, `copybook-data`, `mainframe-batch-flow`,
+`mainframe-program-docs`, `behavioral-baseline`, `java-analysis`, and `dotnet-analysis`
+scripts. Type-check a skill script with
 `uv run --with ty --with <deps> ty check <path>`.
 
 For `trivy`: fix real findings rather than suppressing them. If a finding is a reviewed false

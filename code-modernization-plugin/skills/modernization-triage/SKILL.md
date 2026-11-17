@@ -1,6 +1,6 @@
 ---
 name: modernization-triage
-description: Classifies modernization initiatives into Refactor vs. Rearchitect tracks via structured elicitation, loads the stack profile skills that match the scope, and routes to the playbook-refactor or playbook-rearchitect skill. Use before any code changes whenever a user asks to modernize, upgrade, clean up, decompose, migrate, or rearchitect a codebase, service, or application on any stack, including mainframe estates (COBOL, PL/I, CICS, IMS, Db2, VSAM, JCL).
+description: Classifies modernization initiatives into Refactor vs. Rearchitect tracks via structured elicitation and enterprise rulebooks (.modernize/rulebook/*.md), loads matching stack profile skills (IBM Z mainframe, Java, .NET), persists a resumable .modernize/triage-brief.md, and routes to playbook-refactor or playbook-rearchitect. Use before any code changes whenever a user asks to modernize, upgrade, clean up, decompose, migrate, or rearchitect a codebase, service, or application on any stack.
 license: MIT
 metadata:
   author: markbsigler
@@ -22,21 +22,36 @@ This skill and both playbooks are stack-neutral. Stack-specific knowledge lives 
 | Profile skill | Load when the scope contains |
 | --- | --- |
 | `mainframe-analysis` | IBM Z artifacts (COBOL, PL/I, or Assembler programs, copybooks, JCL, BMS or MFS maps, REXX, CICS CSD extracts, IMS DBDs or PSBs, DCLGENs), or the user mentions z/OS, CICS, IMS, Db2 for z/OS, VSAM, or mainframe batch |
+| `java-analysis` | Java or JVM build files (`pom.xml`, `build.gradle`, `build.gradle.kts`), Java EE / Jakarta EE descriptors (`web.xml`, `ejb-jar.xml`, `struts.xml`, `ibm-web-bnd.xml`), or the user mentions Java, Spring Boot, Jakarta EE, WebSphere, WebLogic, JBoss/WildFly, Struts, or Maven/Gradle |
+| `dotnet-analysis` | .NET solutions or project files (`.sln`, `.slnx`, `.csproj`, `packages.config`, `Directory.Packages.props`, `Web.config`), or the user mentions .NET Framework, .NET Core, modern .NET, ASP.NET, WCF, EF6/EF Core, or NuGet |
 
-A mixed estate can match several profiles. A Rearchitect slice usually needs a profile for the legacy stack and, when one exists, one for the target stack. When no profile matches, the playbooks' generic tasks apply on their own.
+A mixed estate can match several profiles. A Rearchitect slice or language conversion usually needs a profile for the legacy stack and, when one exists, one for the target stack (for example `mainframe-analysis` + `java-analysis` when extracting or converting a COBOL/CICS workload to Java Spring Boot). When no profile matches, the playbooks' generic tasks apply on their own.
+
+## Step 0: Resume Check, Rulebooks & Prior Learnings
+
+Before inspecting source code or asking questions, check the workspace for existing modernization state and organizational policies:
+
+1. **Resumable State (`.modernize/triage-brief.md`):** If `.modernize/triage-brief.md` already exists and matches the user's current request, read it and resume at the recorded playbook and stage instead of re-running triage from scratch.
+2. **Enterprise Rulebook (`.modernize/rulebook/*.md` and `.github/modernize/rulebook/*.md`):** Read every Markdown file in either directory if present. Rulebooks define organizational modernization intent:
+   - Target architectures, cloud services, databases, and messaging platforms
+   - Upgrade standards (for example target Java, Spring Boot, .NET, or Enterprise COBOL versions)
+   - Security, authentication, infrastructure-as-code, and compliance guardrails
+   - Prohibited technologies and coding/testing conventions
+   **Rulebook policies override default assessment and planning recommendations** and pre-answer matching elicitation questions. Record every applied rulebook constraint in the Triage Brief.
+3. **Prior Learnings (`.modernize/learnings/*.md`):** Scan the first three lines (`# Title` + one-sentence summary) of any file in `.modernize/learnings/` and read the full file when relevant to the scope.
 
 ## Step 1: Detect the estate
 
-Inspect the target scope before asking questions, so you only ask what the code cannot tell you. Match the scope against the stack profiles table, load every matching profile, and run its discovery first; each profile's estate brief informs the questions below. Where no profile matches, survey build manifests, entry points, deployment descriptors, and data stores.
+Inspect the target scope before asking questions, so you only ask what the code and rulebook cannot tell you. Match the scope against the stack profiles table, load every matching profile, and run its discovery first; each profile's estate brief informs the questions below. Where no profile matches, survey build manifests, entry points, deployment descriptors, and data stores.
 
 ## Step 2: Elicitation Protocol
 
-If the user's request lacks scope or architectural constraints, ask these exact questions before selecting a playbook:
+If the user's request and the rulebook still lack scope or architectural constraints, ask these exact questions before selecting a playbook:
 1. **Behavioral Parity:** Must all external APIs, schemas, and deployment boundaries remain 100% unchanged?
 2. **Primary Driver:** Is the goal tech-debt/framework upgrades (Refactor) or shifting deployment/data topology to unlock new capabilities (Rearchitect)?
 3. **Target Scope:** Which module, service, or domain boundary is in scope?
 
-Add each loaded profile's elicitation questions that its discovery could not answer. Ask at most two or three questions per round, and acknowledge what you already know before you ask.
+Skip any question already answered by the user's prompt or `.modernize/rulebook/*.md`. Add each loaded profile's elicitation questions that its discovery and the rulebook could not answer. Ask at most two or three questions per round, and acknowledge what you already know before you ask.
 
 ## Step 3: Classify
 
@@ -57,18 +72,21 @@ Modernization initiatives are commonly grouped into seven options: encapsulate, 
 
 ## Step 4: Collect track-specific inputs
 
-| Track | Ask until answered | Sets |
+| Track | Ask until answered (unless supplied by rulebook) | Sets |
 | --- | --- | --- |
 | **Refactor** | 1. Primary driver (framework upgrade, tech debt, security/CVE, or performance)? 2. Target runtime, framework, or compiler version? 3. Existing test coverage baseline? | Success metrics: benchmark latency or CPU, zero CVEs, passing golden master |
 | **Rearchitect** | 1. Target architecture pattern (modular monolith, microservices, event-driven, serverless)? 2. First bounded context or domain slice? 3. Integration and migration pattern (Strangler Fig, Branch by Abstraction, change data capture)? | Prevents big-bang rewrites; enforces incremental extraction |
 
-## Step 5: Present the Triage Brief
+## Step 5: Present and Persist the Triage Brief
+
+Present the Triage Brief to the user and save it to `.modernize/triage-brief.md` (alongside `.modernize/estate-brief.md` when a stack profile ran discovery) so later stages and sessions can resume without re-asking:
 
 ```markdown
 ## Modernization Triage Decision
 - **Selected Track:** [Refactor | Rearchitect]
 - **Target Scope:** <module, service, transactions, or job streams>
 - **Classification Rationale:** <2 sentences citing behavioral and topology constraints>
+- **Rulebook Constraints Applied:** <policies loaded from .modernize/rulebook/ or .github/modernize/rulebook/, or "none">
 - **Confirmed Parameters:**
   - <track-specific answer 1>
   - <track-specific answer 2>

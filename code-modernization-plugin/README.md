@@ -1,14 +1,15 @@
 # code-modernization-plugin
 
-An [Agent Plugin](https://agent-plugins.org/) that draws a strict line between **Refactor** (behavior-preserving code transformation) and **Rearchitect** (structural and topology transformation), routes every request through interactive discovery and triage, and runs each track as a 4-stage playbook with human approval gates. The triage and playbook skills are stack-neutral; stack-specific knowledge comes from pluggable [stack profiles](#stack-profiles). The first profile, `mainframe-analysis`, adds deep IBM Z support: COBOL, PL/I, Assembler, JCL, REXX, CLIST, Easytrieve, and Natural with CICS, IMS, Db2 for z/OS, VSAM, IDMS, Adabas, and MQ. Three tool skills back it: `copybook-data` (record layouts and copybook-aware data tools), `mainframe-batch-flow` (JCL expansion and data lineage), and `mainframe-program-docs` (program and screen documentation).
+An [Agent Plugin](https://agent-plugins.org/) that draws a strict line between **Refactor** (behavior-preserving code transformation) and **Rearchitect** (structural and topology transformation), routes every request through interactive discovery, enterprise rulebooks (`.modernize/rulebook/`), and triage, and runs each track as a 4-stage playbook with human approval gates, frozen behavioral baselines (`behavioral-baseline`), and requirement traceability. The triage and playbook skills are stack-neutral; stack-specific knowledge comes from pluggable [stack profiles](#stack-profiles): `mainframe-analysis` (IBM Z), `java-analysis` (Java / Spring Boot / Jakarta EE), and `dotnet-analysis` (.NET Framework / modern .NET). Three mainframe tool skills (`copybook-data`, `mainframe-batch-flow`, and `mainframe-program-docs`) and the stack-neutral `behavioral-baseline` skill complete the toolkit.
 
 ```text
 code-modernization-plugin/
 ├── plugin.json                                      # Portable manifest (Agent Plugins 1.0.0)
 ├── skills/                                          # Portable core logic & playbooks
-│   ├── modernization-triage/                        # Shared discovery, track classification, stack profile registry
+│   ├── modernization-triage/                        # Shared discovery, rulebooks, track classification, profile registry
 │   ├── playbook-refactor/                           # Track A: Behavior-preserving code transformation
 │   ├── playbook-rearchitect/                        # Track B: Structural & topology transformation
+│   ├── behavioral-baseline/                         # Tool skill: frozen TC-XXX baselines, rulebooks, traceability gates
 │   ├── mainframe-analysis/                          # Stack profile: IBM Z (z/OS)
 │   │   ├── SKILL.md
 │   │   ├── scripts/                                 # Read-only, stdlib-only PEP 723 scripts
@@ -21,10 +22,16 @@ code-modernization-plugin/
 │   │   └── references/                              # Loaded on demand
 │   │       ├── playbook-stages.md                   #   z/OS tasks for every playbook stage
 │   │       └── ...                                  #   COBOL, data, CICS/IMS, Db2/IMS/VSAM, batch, MQ, security, cost, DevOps
+│   ├── java-analysis/                               # Stack profile: Java / Spring Boot / Jakarta EE (java_inventory.py)
+│   ├── dotnet-analysis/                             # Stack profile: .NET Framework / Modern .NET (dotnet_inventory.py)
 │   ├── copybook-data/                               # Tool skill: layouts, diffs, decode, compare, mask
 │   ├── mainframe-batch-flow/                        # Tool skill: JCL expansion, COND logic, data set lineage
 │   └── mainframe-program-docs/                      # Tool skill: COBOL flow and rules, 3270 screen maps
 ├── com.github.copilot/                              # Client extension files (see below)
+│   ├── agents/
+│   │   ├── modernize.agent.md                       # Orchestrator agent
+│   │   ├── modernize-refactor.agent.md              # Track A coordinator agent
+│   │   └── modernize-rearchitect.agent.md           # Track B coordinator agent
 │   ├── prompts/
 │   │   ├── modernize.prompt.md                      # /modernize: triage, then launch the playbook
 │   │   ├── refactor.prompt.md                       # /refactor: Track A directly
@@ -46,10 +53,13 @@ code-modernization-plugin/
 
 | Skill | Role |
 | --- | --- |
-| [`modernization-triage`](./skills/modernization-triage/SKILL.md) | Detects the estate, loads matching stack profiles, runs the elicitation protocol, classifies Refactor vs. Rearchitect (and flags the other modernization options: encapsulate, rehost, replatform, rebuild, replace), and hands off with a Triage Brief |
-| [`playbook-refactor`](./skills/playbook-refactor/SKILL.md) | Track A: audit, characterization and NFR baseline, incremental transformation, equivalence verification |
+| [`modernization-triage`](./skills/modernization-triage/SKILL.md) | Detects the estate, loads `.modernize/rulebook/` policies and matching stack profiles, runs the elicitation protocol, classifies Refactor vs. Rearchitect (and flags the other modernization options: encapsulate, rehost, replatform, rebuild, replace), and persists `.modernize/triage-brief.md` |
+| [`playbook-refactor`](./skills/playbook-refactor/SKILL.md) | Track A: audit, frozen characterization and NFR baseline, incremental transformation, equivalence verification |
 | [`playbook-rearchitect`](./skills/playbook-rearchitect/SKILL.md) | Track B: seam analysis and ADR, contracts and anti-corruption layer, strangler slice and dual run, parity, cutover, and decommissioning |
+| [`behavioral-baseline`](./skills/behavioral-baseline/SKILL.md) | Stack-neutral baseline & gate skill (`baseline_gate.py`): loads `.modernize/rulebook/` and `.modernize/learnings/`, freezes `.modernize/baseline/test-cases.md` and `testdata/` with SHA-256 digests, verifies 1:1 `TC-XXX` test coverage, and runs `spec-quality`, `spec-to-plan`, `plan-to-tasks`, and `completeness` traceability gates |
 | [`mainframe-analysis`](./skills/mainframe-analysis/SKILL.md) | Stack profile for IBM Z: inventory, CRUD-tagged dependency graph, definitions from CSD, IDCAMS, LISTCAT, MQSC, binds, listings, and schedules, seam and data ownership evidence, IMS models, the Mainframe Estate Brief, and the z/OS tasks for every playbook stage |
+| [`java-analysis`](./skills/java-analysis/SKILL.md) | Stack profile for Java / JVM (`java_inventory.py`): Maven and Gradle modules, Java 8→21 and Spring Boot 2→3 upgrades, `javax.*` → `jakarta.*` impact, WebSphere/EJB/JNDI/Struts coupling, JPA/SQL tables, `BigDecimal` financial safety, and target-side rules for mainframe-to-Java migrations |
+| [`dotnet-analysis`](./skills/dotnet-analysis/SKILL.md) | Stack profile for .NET (`dotnet_inventory.py`): `.sln`/`.csproj` analysis, SDK-style vs. legacy `.NET Framework` target monikers, `packages.config` vs. `PackageReference`/CPM, `System.Web`/WCF/EF6 seams, `decimal` financial safety, and target-side rules for mainframe-to-.NET migrations |
 | [`copybook-data`](./skills/copybook-data/SKILL.md) | Exact record layouts from COBOL copybooks, PL/I structures, and Assembler DSECTs (SYNCHRONIZED slack bytes included); layout diffs; JSON Schema, Avro, AsyncAPI, and DFSORT symbols; field-level decoding, golden-master comparison, and consistent masking of record files |
 | [`mainframe-batch-flow`](./skills/mainframe-batch-flow/SKILL.md) | Expands JCL as the converter does, explains `COND` and `IF` logic, reads utility control statements, and traces data set lineage and job dependencies, checked against scheduler exports |
 | [`mainframe-program-docs`](./skills/mainframe-program-docs/SKILL.md) | Documentation skeletons for COBOL programs (paragraph flow, unreachable paragraphs, interfaces, business-rule candidates) and BMS or MFS screens (field tables, mockups, screen contracts) |
@@ -143,14 +153,15 @@ Add the marketplace, then install just this plugin:
 /plugin install code-modernization-plugin@agent-plugins
 ```
 
-Any Agent Plugins client that supports skills loads `plugin.json` and the seven skills. Clients such as VS Code also surface skills as slash commands.
+Any Agent Plugins client that supports skills loads `plugin.json` and the ten skills. Clients such as VS Code also surface skills as slash commands.
 
 ### Client extension directories
 
-`com.github.copilot/` and `com.cursor.client/` are client extension directories under [§8 of the Agent Plugins specification](https://agent-plugins.org/specification#8-client-extensions): each namespace belongs to the client that implements it, and clients that do not implement a namespace ignore it. The plugin works without them; they add slash-command prompts, passive guardrails, and auto-attached editing rules. If your client does not load them from the plugin, copy them into the workspace:
+`com.github.copilot/` and `com.cursor.client/` are client extension directories under [§8 of the Agent Plugins specification](https://agent-plugins.org/specification#8-client-extensions): each namespace belongs to the client that implements it, and clients that do not implement a namespace ignore it. The plugin works without them; they add custom agents, slash-command prompts, passive guardrails, and auto-attached editing rules. If your client does not load them from the plugin, copy them into the workspace:
 
 | Files | Copy to |
 | --- | --- |
+| `com.github.copilot/agents/*.agent.md` | `.github/agents/` (Copilot custom agents) |
 | `com.github.copilot/prompts/*.prompt.md` | `.github/prompts/` (VS Code prompt files) |
 | `com.github.copilot/instructions/*.instructions.md` | `.github/instructions/` |
 | `com.cursor.client/rules/*.mdc` | `.cursor/rules/` |

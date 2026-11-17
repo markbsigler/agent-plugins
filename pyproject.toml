@@ -101,6 +101,9 @@ extra-paths = [
   "code-modernization-plugin/skills/copybook-data/scripts",
   "code-modernization-plugin/skills/mainframe-batch-flow/scripts",
   "code-modernization-plugin/skills/mainframe-program-docs/scripts",
+  "code-modernization-plugin/skills/behavioral-baseline/scripts",
+  "code-modernization-plugin/skills/java-analysis/scripts",
+  "code-modernization-plugin/skills/dotnet-analysis/scripts",
 ]
 
 [tool.ty.src]
@@ -160,6 +163,9 @@ source = [
   "code-modernization-plugin/skills/copybook-data/scripts",
   "code-modernization-plugin/skills/mainframe-batch-flow/scripts",
   "code-modernization-plugin/skills/mainframe-program-docs/scripts",
+  "code-modernization-plugin/skills/behavioral-baseline/scripts",
+  "code-modernization-plugin/skills/java-analysis/scripts",
+  "code-modernization-plugin/skills/dotnet-analysis/scripts",
 ]
 # Each mainframe skill bundles an identical copy of zos_encoding.py (a test keeps them in
 # sync); tests import and measure the mainframe-analysis copy, so the others are omitted.

@@ -8,14 +8,16 @@ All notable changes to the repository tooling are documented here. The format fo
 
 ### Added
 
-- `code-modernization-plugin` with Refactor vs. Rearchitect triage, stack-neutral
-  4-stage gated playbooks, pluggable stack profiles (the first is the IBM Z `mainframe-analysis`
-  skill), the `copybook-data`, `mainframe-batch-flow`, and `mainframe-program-docs` tool
-  skills, and Copilot/Cursor client extensions. `tests/test_mainframe_analysis.py` checks that
-  every registered stack profile provides each stage section the playbooks call; per-script
-  tests build a synthetic estate (`tests/mainframe_fixtures.py`) with EBCDIC members generated
-  at test time, a test keeps the vendored copies of `zos_encoding.py` identical, and an
-  opt-in test runs the inventory and seam report against a CardDemo clone (`CARDDEMO_DIR`).
+- `code-modernization-plugin` with Refactor vs. Rearchitect triage, enterprise rulebooks
+  (`.modernize/rulebook/`), stack-neutral 4-stage gated playbooks, pluggable stack profiles
+  (`mainframe-analysis` for IBM Z, `java-analysis` for Java/Spring Boot/Jakarta EE, and
+  `dotnet-analysis` for .NET), the `behavioral-baseline`, `copybook-data`,
+  `mainframe-batch-flow`, and `mainframe-program-docs` tool skills, and Copilot/Cursor client
+  extensions (including custom agents under `com.github.copilot/agents/`).
+  `tests/test_mainframe_analysis.py` checks that every registered stack profile provides each
+  stage section the playbooks call; per-script tests build synthetic estates at test time, a
+  test keeps the vendored copies of `zos_encoding.py` identical, and an opt-in test runs the
+  inventory and seam report against a CardDemo clone (`CARDDEMO_DIR`).
 - Spec-conformance tests that extension namespaces are reverse-domain identifiers and that
   `./` paths in `extensions` stay inside the plugin root, that `SKILL.md` links stay inside
   the skill, and that manifests contain no `TODO` placeholders.

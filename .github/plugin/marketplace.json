@@ -16,7 +16,7 @@
     },
     {
       "name": "code-modernization-plugin",
-      "description": "Code Modernization playbooks (Refactor & Rearchitect) with elicitations, ADRs, and Strangler Fig gates, plus pluggable stack profiles starting with IBM Z mainframe (COBOL, PL/I, Assembler, JCL, CICS, IMS, Db2, VSAM, MQ) and tools for copybook data, batch flow, data ownership seams, and program documentation, for Copilot and Cursor.",
+      "description": "Code Modernization playbooks (Refactor & Rearchitect) with enterprise rulebooks, frozen behavioral baselines, ADRs, and Strangler Fig gates, plus stack profiles for IBM Z mainframe (COBOL, PL/I, Assembler, JCL, CICS, IMS, Db2, VSAM, MQ), Java/Spring Boot, and .NET, for Copilot and Cursor.",
       "version": "1.0.0",
       "source": "./code-modernization-plugin"
     },

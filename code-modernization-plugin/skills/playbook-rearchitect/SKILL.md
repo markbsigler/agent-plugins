@@ -14,12 +14,20 @@ You are executing a **Rearchitect** initiative. You are materially altering code
 Begin every response with:
 `[REARCHITECT PLAYBOOK: STAGE X/4] - Objective: [Current Step]`
 
+## Before Stage 1
+
+1. **Resume & Rulebook Preflight:**
+   - Read `.modernize/triage-brief.md` and `.modernize/estate-brief.md` if present. If a stage gate was already approved in `.modernize/plan.md` or the ADR, resume at the next stage.
+   - Read any enterprise rulebooks in `.modernize/rulebook/*.md` or `.github/modernize/rulebook/*.md`. **Rulebook policies override default architecture, database, messaging, and infrastructure recommendations** and pre-answer matching questions in Stage 1.
+   - Scan the first three lines (`# Title` + one-sentence summary) of any file in `.modernize/learnings/` and load full files relevant to the current slice.
+
 ## Guardrails
 
 - **One slice at a time:** extract one bounded context or domain slice per pass.
 - **Contracts before code:** every new boundary has an explicit, reviewed contract and an anti-corruption layer before implementation starts.
 - **Reversible routing:** every traffic or data shift sits behind a toggle, router, or gateway rule that can send work back to the legacy path immediately.
 - **Legacy stays until parity is proven:** delete nothing until Stage 4 parity checks pass and the user confirms cutover.
+- **Rulebook compliance:** never violate a constraint from `.modernize/rulebook/` or `.github/modernize/rulebook/`.
 - **Stack profiles:** load every stack profile skill listed in the Triage Brief (if you started here without triage, match the scope against the stack profiles table in `modernization-triage` first) and keep each estate brief current. A slice usually needs a profile for the legacy stack and, when one exists, a profile for the target stack. Legacy-stack profiles carry the seam, contract, data synchronization, and decommissioning work; target-stack profiles carry implementation idioms and tests. When no profile matches, the generic tasks in each stage apply on their own.
 
 ---
@@ -28,17 +36,18 @@ Begin every response with:
 Map coupling boundaries and produce an Architecture Decision Record (ADR) before writing code.
 
 ### Agent Tasks:
-1. **Elicit Missing Architecture Details** (if not already provided):
+1. **Elicit Missing Architecture Details** (unless already supplied by the prompt, Triage Brief, or rulebook):
    - Target architecture style (Modular Monolith, Microservices, Event-Driven, Serverless).
    - First bounded context or domain slice to extract.
    - Data decoupling strategy (Database-per-Service, Change Data Capture, Shared-Nothing).
-2. **Coupling & Seam Audit:** Scan call graphs, shared database tables, distributed transactions, and synchronous dependencies around the target domain.
-3. **Generate ADR:** Draft a formal ADR (`docs/adr/ADR-XXXX-<domain>-rearchitect.md`) documenting Context, Target Topology, Data Ownership, Trade-offs, and Migration Strategy (e.g., Strangler Fig or Branch by Abstraction).
+2. **Coupling & Seam Audit:** Scan call graphs, shared database tables, distributed transactions, and synchronous dependencies around the target domain, and extract observable slice requirements (`REQ-001`, ... / `BR-001`, ...).
+3. **Generate ADR & Traceability Plan:** Draft a formal ADR (`docs/adr/ADR-XXXX-<domain>-rearchitect.md`) documenting Context, Target Topology, Data Ownership, Trade-offs, and Migration Strategy (e.g., Strangler Fig or Branch by Abstraction), and write `.modernize/plan.md` and `.modernize/traceability.json` mapping requirements to tasks (`T-001`, ...). Record reusable domain/seam insights in `.modernize/learnings/<slug>.md`.
 
 ### Stack Profile Tasks:
 - For each stack profile in the Triage Brief, complete its `Rearchitect Stage 1` tasks (in the profile skill's `references/playbook-stages.md`).
 
 ### Human-in-the-Loop Gate:
+* Run the `behavioral-baseline` skill's `spec-to-plan` gate when requirements and plan items are tracked on disk.
 * Present the Seam Audit and draft ADR to the user.
 * Include each stack profile's Stage 1 results, or state why a profile's tasks do not apply.
 * Stop and ask: *"Do you approve the target architecture and ADR? Reply **APPROVE STAGE 1** to proceed."*
@@ -51,13 +60,14 @@ Introduce clean boundaries and explicit contracts before moving business logic.
 ### Agent Tasks:
 1. **Define Target Contracts:** Generate formal interface schemas (OpenAPI, AsyncAPI, Protobuf, or internal module interfaces) for the new architecture.
 2. **Build Anti-Corruption Layer (ACL) / Seam:** Introduce an interface abstraction, adapter, or feature flag in the legacy codebase so callers are decoupled from the legacy implementation.
-3. **Contract Tests:** Write consumer-driven contract tests verifying both the legacy adapter and the new interface specification.
+3. **Contract Tests & Frozen Baseline:** Write consumer-driven contract tests verifying both the legacy adapter and the new interface specification, and use the `behavioral-baseline` skill (`baseline_gate.py freeze`) to lock `.modernize/baseline/test-cases.md` (`TC-001`, ...), `.modernize/baseline/infra-decision-table.md`, and externalized test fixtures before building the new slice.
 
 ### Stack Profile Tasks:
 - For each stack profile in the Triage Brief, complete its `Rearchitect Stage 2` tasks (in the profile skill's `references/playbook-stages.md`).
 
 ### Human-in-the-Loop Gate:
-* Display the generated interface contracts and seam locations.
+* Run the `behavioral-baseline` skill's `plan-to-tasks` gate on `.modernize/traceability.json`.
+* Display the generated interface contracts, frozen `TC-XXX` baseline, and seam locations.
 * Include each stack profile's Stage 2 results, or state why a profile's tasks do not apply.
 * Stop and ask: *"Interface contracts and isolation seams are ready. Reply **APPROVE STAGE 2** to build the new architectural slice."*
 
@@ -67,9 +77,9 @@ Introduce clean boundaries and explicit contracts before moving business logic.
 Build the new architectural component alongside the legacy system with safe traffic/data routing.
 
 ### Agent Tasks:
-1. Implement the new service, module, or event consumer adhering strictly to the Stage 2 contracts and isolated data store.
+1. Implement the new service, module, or event consumer adhering strictly to the Stage 2 contracts, rulebook constraints, and isolated data store.
 2. Configure routing controls (feature toggles, API gateway routes, or dual-write/shadow-read pipelines) to support gradual cutover.
-3. Verify telemetry, distributed tracing, and rollback switches are active before enabling traffic.
+3. Verify telemetry, distributed tracing, and rollback switches are active before enabling traffic, and record implementation discoveries in `.modernize/learnings/<slug>.md`.
 
 ### Stack Profile Tasks:
 - For each stack profile in the Triage Brief, complete its `Rearchitect Stage 3` tasks (in the profile skill's `references/playbook-stages.md`).
@@ -83,7 +93,7 @@ Build the new architectural component alongside the legacy system with safe traf
 Verify new architectural capabilities and safely retire bypassed legacy code.
 
 ### Agent Tasks:
-1. Execute parity checks (shadow traffic comparison or reconciliation queries) between the legacy path and the new architecture.
+1. Execute parity checks (shadow traffic comparison or reconciliation queries) between the legacy path and the new architecture, and run the `behavioral-baseline` verification and `completeness` gate (`baseline_gate.py verify` and `baseline_gate.py gate --type completeness`) to confirm frozen baseline integrity, 1:1 `TC-XXX` test coverage, and full requirement traceability.
 2. Confirm the new architectural capabilities (e.g., independent deployment, async scaling, fault isolation) function as specified in the Stage 1 ADR.
 3. Once the user confirms 100% traffic cutover, remove dead legacy code paths, temporary adapters, and obsolete feature flags.
 4. Update the ADR status to `Accepted & Implemented` and mark state as `[REARCHITECT PLAYBOOK: COMPLETED]`.

@@ -25,6 +25,9 @@ _SCRIPT_DIRS = (
     _MODERNIZATION_SKILLS / "copybook-data" / "scripts",
     _MODERNIZATION_SKILLS / "mainframe-batch-flow" / "scripts",
     _MODERNIZATION_SKILLS / "mainframe-program-docs" / "scripts",
+    _MODERNIZATION_SKILLS / "behavioral-baseline" / "scripts",
+    _MODERNIZATION_SKILLS / "java-analysis" / "scripts",
+    _MODERNIZATION_SKILLS / "dotnet-analysis" / "scripts",
 )
 for _scripts in reversed(_SCRIPT_DIRS):
     if str(_scripts) not in sys.path:
